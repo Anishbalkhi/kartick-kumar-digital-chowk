@@ -522,12 +522,12 @@ async function init() {
     { el: '.hero', at: () => mobile() ? [0.5, 0.5] : [0.27, 0.5],
       len: r => mobile() ? Math.min(r.width * 0.95, r.height * 0.62) : Math.min(r.width * 0.42, r.height * 0.7),
       ang: 37, from: 0.85, to: 0.1 },
-    // the story street: land at its top-middle ...
+    // the story street: land at its top-middle, lying flat (horizontal) ...
     { el: '.jr-street', at: () => mobile() ? [0.5, 0.012] : [0.5, 0.045],
-      len: r => mobile() ? r.width * 0.78 : r.width * 0.3, ang: () => mobile() ? 24 : 18, from: 0.95, to: 0.3 },
+      len: r => mobile() ? r.width * 0.78 : r.width * 0.3, ang: 0, from: 0.95, to: 0.3 },
     // ... then walk down the middle of the street, holding mid-screen, to its bottom-middle
     { el: '.jr-street', at: () => mobile() ? [0.5, 0.992] : [0.5, 0.965],
-      len: r => mobile() ? r.width * 0.78 : r.width * 0.3, ang: () => mobile() ? 24 : 18, follow: 0.42, turn: false },
+      len: r => mobile() ? r.width * 0.78 : r.width * 0.3, ang: 0, follow: 0.42, turn: false },
     // finally settle onto the sitar in his photograph (About section) and dissolve into it
     { el: '.about-photo img', at: [0.806, 0.47], len: r => r.width * 1.25, ang: 63, from: 0.95, to: 0.3,
       turn: false, merge: true }
