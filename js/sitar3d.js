@@ -79,11 +79,25 @@ async function init() {
   }
 
   /* ---------- lights ---------- */
-  scene.add(new THREE.HemisphereLight(0xcfc4d8, 0x4a3018, 0.75));
+  const hemi = new THREE.HemisphereLight(0xcfc4d8, 0x4a3018, 0.75); scene.add(hemi);
   const key = new THREE.DirectionalLight(0xffe2c0, 2.4); key.position.set(5, 2, 4); scene.add(key);
   const fill = new THREE.DirectionalLight(0xfff0e0, 0.75); fill.position.set(-3, -2, 5); scene.add(fill);
   const rim = new THREE.DirectionalLight(0xb4b6e0, 0.7); rim.position.set(-4, 4, -5); scene.add(rim);
   const rim2 = new THREE.DirectionalLight(0xffb878, 1.0); rim2.position.set(4, -1, -4); scene.add(rim2);
+  // the monument's warm uplight, only while the sitar is mounted on it
+  const uplight = new THREE.DirectionalLight(0xffa64a, 0); uplight.position.set(0.5, -3, 3); scene.add(uplight);
+  const LIGHT = {
+    away: { key: new THREE.Color(0xffe2c0), keyI: 2.4, sky: new THREE.Color(0xcfc4d8), hemiI: 0.75, exp: 1.12, up: 0 },
+    chowk: { key: new THREE.Color(0xffc985), keyI: 1.9, sky: new THREE.Color(0xe0c08c), hemiI: 0.8, exp: 1.0, up: 1.4 }
+  };
+  function warmLight(w) {        // w = 1 on the monument, 0 once it has lifted off
+    key.color.copy(LIGHT.away.key).lerp(LIGHT.chowk.key, w);
+    key.intensity = LIGHT.away.keyI + (LIGHT.chowk.keyI - LIGHT.away.keyI) * w;
+    hemi.color.copy(LIGHT.away.sky).lerp(LIGHT.chowk.sky, w);
+    hemi.intensity = LIGHT.away.hemiI + (LIGHT.chowk.hemiI - LIGHT.away.hemiI) * w;
+    renderer.toneMappingExposure = LIGHT.away.exp + (LIGHT.chowk.exp - LIGHT.away.exp) * w;
+    uplight.intensity = LIGHT.chowk.up * w;
+  }
 
   /* ---------- profile of the main gourd (radius r, height y), in cm ---------- */
   const prof = new THREE.SplineCurve([
@@ -527,8 +541,10 @@ async function init() {
     // phones crop the image to its middle, so the sitar sits a little smaller and further left there
     // placed as in the original artwork: gourd resting on the rim at ~(45%, 34%), head ending near (73%, 7%)
     // phones (portrait artwork): gourd on the rim left of centre, neck rising to ~34 degrees
-    { el: '.chowk-stage', at: () => portrait() ? [0.553, 0.356] : mobile() ? [0.555, 0.23] : [0.573, 0.214],
-      len: r => r.width * (portrait() ? 0.44 : mobile() ? 0.32 : 0.36), ang: () => portrait() ? 34 : 29 },
+    // mounted on the gold arch stand: gourd centre at the artwork's (44%, 32.5%) wide / (40.5%, 40%) portrait,
+    // body just over the rim (its lowest edge tucks behind it), neck rising at 27 / 33 degrees
+    { el: '.chowk-stage', at: () => portrait() ? [0.535, 0.356] : [0.545, 0.25],
+      len: r => r.width * (portrait() ? 0.42 : 0.32), ang: () => portrait() ? 33 : 27 },
     { el: '.hero', at: () => mobile() ? [0.5, 0.5] : [0.27, 0.5],
       len: r => mobile() ? Math.min(r.width * 0.95, r.height * 0.62) : Math.min(r.width * 0.42, r.height * 0.7),
       ang: 37, from: 0.85, to: 0.1 },
@@ -550,7 +566,7 @@ async function init() {
 
   function placement() {
     const vh = window.innerHeight;
-    let p = null, prevQ = null, turns = 0, hop = 0, merge = 0;
+    let p = null, prevQ = null, turns = 0, hop = 0, merge = 0, lift = -1;
     for (const st of STOPS) {
       if (st.desktopOnly && mobile()) continue;
       const el = document.querySelector(st.el);
@@ -576,10 +592,11 @@ async function init() {
       p = { x: lerp(p.x, q.x, s), y: lerp(p.y, q.y, s), len: lerp(p.len, q.len, s), ang: lerp(p.ang, q.ang, s) };
       if (st.turn !== false) turns += s;
       if (st.merge) merge = s;
+      if (lift < 0) lift = s;               // the first flight: off the monument
       prevQ = q;
     }
     if (p) p.y -= hop * vh * 0.06;          // a small lift mid-flight
-    return { p, turns, hop, merge };
+    return { p, turns, hop, merge, lift: Math.max(0, lift) };
   }
 
   /* ---------- mount: one fixed, page-wide layer above the sections ---------- */
@@ -617,10 +634,34 @@ async function init() {
     mx = e.clientX / window.innerWidth - 0.5; my = e.clientY / window.innerHeight - 0.5;
   }, { passive: true });
 
+  // the monument's front, as a hole in the sitar layer, so the gourd tucks behind the rim
+  const stageEl = document.querySelector('.chowk-stage');
+  const RIM = {   // rim top as an ellipse arc + the monument body below it, in stage fractions
+    wide: { cx: 0.512, top: 0.407, rx: 0.245, drop: 0.024, bottom: 0.83 },
+    tall: { cx: 0.455, top: 0.432, rx: 0.28, drop: 0.018, bottom: 0.76 }
+  };
+  function behindRim() {
+    if (!stageEl) return '';
+    const r = stageEl.getBoundingClientRect(), g = portrait() ? RIM.tall : RIM.wide;
+    const vw = window.innerWidth, vh = window.innerHeight, pts = [];
+    for (let i = 0; i <= 24; i++) {
+      const u = -1 + 2 * i / 24;
+      const fx = g.cx + g.rx * u, fy = g.top + g.drop * u * u;
+      pts.push([r.left + r.width * fx, r.top + r.height * fy]);
+    }
+    pts.push([r.left + r.width * (g.cx + g.rx), r.top + r.height * g.bottom],
+             [r.left + r.width * (g.cx - g.rx), r.top + r.height * g.bottom]);
+    const f = q => q[0].toFixed(1) + 'px ' + q[1].toFixed(1) + 'px';
+    return 'polygon(evenodd, 0 0, ' + vw + 'px 0, ' + vw + 'px ' + vh + 'px, 0 ' + vh + 'px, 0 0, ' +
+      pts.map(f).join(', ') + ', ' + f(pts[0]) + ', 0 0)';
+  }
+
   function render(t) {
     const s = t / 1000;
     cx += (mx - cx) * 0.05; cy += (my - cy) * 0.05;
-    const { p, turns, merge } = placement();
+    const { p, turns, merge, lift } = placement();
+    const mounted = 1 - clamp01(lift / 0.25);         // 1 while resting on the stand
+    warmLight(mounted);
     // the hand-off into the photograph: tighten a clip to the photo frame, then crossfade with a soft glow
     const fade = noFade ? 0 : ease(clamp01((merge - 0.62) / 0.36));
     const clipT = ease(clamp01((merge - 0.35) / 0.45));
@@ -629,7 +670,8 @@ async function init() {
         const r = photo.getBoundingClientRect(), vw0 = window.innerWidth, vh0 = window.innerHeight;
         const ins = [r.top, vw0 - r.right, vh0 - r.bottom, r.left].map(v => Math.max(0, v) * clipT);
         cvs.style.clipPath = 'inset(' + ins.map(v => v.toFixed(1) + 'px').join(' ') + ' round ' + (3 * clipT).toFixed(1) + 'px)';
-      } else if (cvs.style.clipPath) cvs.style.clipPath = '';
+      } else if (mounted > 0 && lift < 0.12) cvs.style.clipPath = behindRim();
+      else if (cvs.style.clipPath) cvs.style.clipPath = '';
       photoFrame.style.setProperty('--kk-glow', (Math.sin(Math.PI * clamp01((merge - 0.55) / 0.45))).toFixed(3));
     }
     if (fade !== lastFade) { cvs.style.opacity = shown ? String(1 - fade) : ''; lastFade = fade; }
@@ -652,10 +694,10 @@ async function init() {
       spin.rotation.y = pose;
       tilt.rotation.set(upright ? 0 : 0.08, 0, upright ? 0 : lean);
     } else if (!reduce) {
-      const calm = 1 - merge;                // settle face-on as it lands in the photograph
-      spin.rotation.y = (0.2 + Math.sin(s * 0.35) * 0.3 + cx * 0.45) * calm + turns * Math.PI * 2;
+      const calm = (1 - merge) * (1 - 0.75 * mounted);   // steady on its stand, face-on in the photograph
+      spin.rotation.y = (0.2 + Math.sin(s * 0.35) * 0.3 + cx * 0.45) * calm + 0.12 * mounted + turns * Math.PI * 2;
       tilt.rotation.set((0.08 + cy * 0.15) * calm, 0, lean + Math.sin(s * 0.5) * 0.02 * calm);
-      holder.position.y += Math.sin(s * 0.9) * 0.012 * k;
+      holder.position.y += Math.sin(s * 0.9) * 0.012 * k * (1 - mounted);   // no floating bob while mounted
     } else {
       spin.rotation.y = 0.25;
       tilt.rotation.set(0.08, 0, lean);

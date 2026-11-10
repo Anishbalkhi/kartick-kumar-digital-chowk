@@ -92,9 +92,15 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .chowk-stage{position:relative;width:min(100%,calc(100svh * 1.7768));aspect-ratio:1672/941;margin:0 auto}
 .chowk-art{position:absolute;inset:0;width:100%;height:100%;display:block}
 /* still photo of his sitar resting on the monument, for browsers without 3D */
-.chowk-still{position:absolute;left:39.4%;top:-4.6%;width:31%;height:auto;pointer-events:none;transform:rotate(6deg);transform-origin:15% 78%;
+.chowk-still{position:absolute;left:39%;top:-1.5%;width:29%;height:auto;pointer-events:none;transform:rotate(6deg);transform-origin:15% 78%;
   filter:brightness(.95) drop-shadow(0 0 1px rgba(255,214,150,.6)) drop-shadow(0 16px 18px rgba(0,0,0,.55))}
 .kk-3d .chowk-still{display:none}
+/* gold arch stand on the monument; the sitar (3D or still) is mounted on it */
+.chowk-stand{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;
+  filter:drop-shadow(0 0 6px rgba(255,190,90,.55)) drop-shadow(0 2px 3px rgba(60,30,0,.5))}
+.chowk-stand .arches path{fill:none;stroke:url(#standGold);stroke-width:10;stroke-linecap:round}
+.chowk-stand .cradle{fill:none;stroke:url(#standGold);stroke-width:22;stroke-linecap:round}
+.chowk-stand.tall{display:none}
 .chowk::after{content:"";position:absolute;left:0;right:0;bottom:0;height:16%;pointer-events:none;
   background:linear-gradient(rgba(5,5,6,0),#050506)}
 .chowk-cue{position:absolute;left:50%;bottom:clamp(10px,2.4vw,28px);transform:translateX(-50%);z-index:2;
@@ -112,6 +118,10 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 @media(max-width:600px){
   .chowk-stage{width:100%;aspect-ratio:941/1672;margin-left:0;transform:none}
   .chowk-still{left:33.6%;top:26.6%;width:39%;transform:rotate(2deg)}
+  .chowk-stand.wide{display:none}
+  .chowk-stand.tall{display:block}
+  .chowk-stand.tall .arches path{stroke-width:8}
+  .chowk-stand.tall .cradle{stroke-width:17}
 }
 
 /* ======================= HERO (cinematic, 3D) ======================= */
