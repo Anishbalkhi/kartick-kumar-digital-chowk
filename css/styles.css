@@ -108,6 +108,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   .chowk{padding-top:64px}
   .chowk-stage{width:max(100%,calc(54svh * 1.7768));margin-left:50%;transform:translateX(-50%)}
 }
+/* phones: the portrait version of the Chowk, shown whole */
+@media(max-width:600px){
+  .chowk-stage{width:100%;aspect-ratio:941/1672;margin-left:0;transform:none}
+  .chowk-still{left:33.6%;top:26.6%;width:39%;transform:rotate(2deg)}
+}
 
 /* ======================= HERO (cinematic, 3D) ======================= */
 .hero{position:relative;height:100vh;min-height:600px;display:flex;flex-direction:column;

@@ -27,9 +27,12 @@
 <section class="chowk" aria-labelledby="chowkTitle">
   <h1 id="chowkTitle" class="sr-only">Sitar Sat Guru Pandit Kartick Kumar Chowk, Mumbai: Digital Chowk</h1>
   <div class="chowk-stage">
-    <img class="chowk-art" src="assets/chowk.jpg" srcset="assets/chowk-960.jpg 960w, assets/chowk.jpg 1672w" sizes="(max-width: 860px) 200vw, 100vw"
+    <picture>
+      <source media="(max-width: 600px)" srcset="assets/chowk-portrait.jpg" width="941" height="1672">
+      <img class="chowk-art" src="assets/chowk.jpg" srcset="assets/chowk-960.jpg 960w, assets/chowk.jpg 1672w" sizes="(max-width: 860px) 200vw, 100vw"
          width="1672" height="941" fetchpriority="high"
          alt="The Sitar Sat Guru Pandit Kartick Kumar Chowk in Mumbai at dusk: a sandstone monument with his name in Hindi and English, a blue street sign, and a framed portrait of the maestro with his sitar">
+    </picture>
     <!-- shown only when the 3D sitar can't run; otherwise the 3D sitar rests here -->
     <img class="chowk-still" src="assets/hero-sitar.webp" width="1100" height="936" alt="" aria-hidden="true">
   </div>

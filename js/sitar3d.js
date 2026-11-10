@@ -510,11 +510,13 @@ async function init() {
      Moving into a stop happens while the element's top scrolls from `from` to `to`
      (fractions of the viewport height); the sitar lifts, turns once and glides over. */
   const mobile = () => window.matchMedia('(max-width: 860px)').matches;
+  const portrait = () => window.matchMedia('(max-width: 600px)').matches;
   const STOPS = [
     // phones crop the image to its middle, so the sitar sits a little smaller and further left there
     // placed as in the original artwork: gourd resting on the rim at ~(45%, 34%), head ending near (73%, 7%)
-    { el: '.chowk-stage', at: () => mobile() ? [0.555, 0.23] : [0.573, 0.214],
-      len: r => r.width * (mobile() ? 0.32 : 0.36), ang: 29 },
+    // phones (portrait artwork): gourd on the rim left of centre, neck rising to ~34 degrees
+    { el: '.chowk-stage', at: () => portrait() ? [0.553, 0.356] : mobile() ? [0.555, 0.23] : [0.573, 0.214],
+      len: r => r.width * (portrait() ? 0.44 : mobile() ? 0.32 : 0.36), ang: () => portrait() ? 34 : 29 },
     { el: '.hero', at: () => mobile() ? [0.5, 0.5] : [0.27, 0.5],
       len: r => mobile() ? Math.min(r.width * 0.95, r.height * 0.62) : Math.min(r.width * 0.42, r.height * 0.7),
       ang: 37, from: 0.85, to: 0.1 },
@@ -533,7 +535,8 @@ async function init() {
       if (!el) continue;
       const r = el.getBoundingClientRect();
       const at = typeof st.at === 'function' ? st.at() : st.at;
-      const q = { x: r.left + r.width * at[0], y: r.top + r.height * at[1], len: st.len(r), ang: st.ang };
+      const q = { x: r.left + r.width * at[0], y: r.top + r.height * at[1], len: st.len(r),
+                  ang: typeof st.ang === 'function' ? st.ang() : st.ang };
       if (!p) { p = q; continue; }
       // never mid-flight before you scroll: start no lower than where this element sits at the top of the page
       const fromPx = Math.min(st.from * vh, r.top + window.pageYOffset - 1);
