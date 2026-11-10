@@ -46,13 +46,13 @@ async function init() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.12;
   renderer.setClearColor(0x000000, 0);
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(28, 0.74, 0.1, 50);
-  camera.position.set(0, 0, 2.95);
+  const camera = new THREE.PerspectiveCamera(28, 1.2, 0.1, 50);
+  camera.position.set(0, 0, 2.3);
 
   /* ---------- deterministic randomness (same grain every load) ---------- */
   let seed = 11;
@@ -78,11 +78,11 @@ async function init() {
   }
 
   /* ---------- lights ---------- */
-  scene.add(new THREE.HemisphereLight(0x6a6478, 0x3a2210, 0.5));
-  const key = new THREE.DirectionalLight(0xffb46b, 3.0); key.position.set(5, 2, 4); scene.add(key);
-  const fill = new THREE.DirectionalLight(0xff9c50, 0.4); fill.position.set(-3, -2, 5); scene.add(fill);
+  scene.add(new THREE.HemisphereLight(0xcfc4d8, 0x4a3018, 0.75));
+  const key = new THREE.DirectionalLight(0xffe2c0, 2.4); key.position.set(5, 2, 4); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xfff0e0, 0.75); fill.position.set(-3, -2, 5); scene.add(fill);
   const rim = new THREE.DirectionalLight(0xb4b6e0, 0.7); rim.position.set(-4, 4, -5); scene.add(rim);
-  const rim2 = new THREE.DirectionalLight(0xffa860, 1.3); rim2.position.set(4, -1, -4); scene.add(rim2);
+  const rim2 = new THREE.DirectionalLight(0xffb878, 1.0); rim2.position.set(4, -1, -4); scene.add(rim2);
 
   /* ---------- profile of the main gourd (radius r, height y), in cm ---------- */
   const prof = new THREE.SplineCurve([
@@ -297,7 +297,7 @@ async function init() {
     ctx.strokeStyle = c.goldLine; ctx.beginPath(); ctx.moveTo(0, nutY + 38); ctx.lineTo(W, nutY + 38); ctx.stroke();
   }
 
-  const RED = '#7a2a14';
+  const RED = '#8a4424';
   const sbTex = carved(1024, 1024, '#682a17', true, (x, c) => drawSoundboard(x, c, 1024));
   const gourdTex = carved(1024, 1024, RED, false, () => {});
   const fbTex = carved(128, 2048, '#5f2414', true, (x, c) => drawFingerboard(x, c, 128, 2048));
@@ -318,15 +318,15 @@ async function init() {
     loadTex('assets/sitar-board.jpg', true), loadTex('assets/sitar-board-mat.jpg'),
     loadTex('assets/sitar-neck.jpg', true), loadTex('assets/sitar-neck-mat.jpg')]);
   const photoMat = (map, pack) => map && pack ? new THREE.MeshPhysicalMaterial({
-    map, color: 0xd2c2b8, bumpMap: pack, bumpScale: 2.2, roughnessMap: pack, roughness: 1, metalnessMap: pack, metalness: 1,
-    clearcoat: 0.65, clearcoatRoughness: 0.14, envMapIntensity: 0.85 }) : null;   // the photo is already lit: tone it down
+    map, color: 0xdcdde4, bumpMap: pack, bumpScale: 2.2, roughnessMap: pack, roughness: 1, metalnessMap: pack, metalness: 1,
+    clearcoat: 0.55, clearcoatRoughness: 0.16, envMapIntensity: 0.7 }) : null;   // the photo is already lit: tone it down
   const M = {
     board: photoMat(boardMap, boardPack) || lacquer(sbTex),
     gourd: lacquer(gourdTex, { side: THREE.DoubleSide }),
     finger: photoMat(neckMap, neckPack) || lacquer(fbTex),
     neck: lacquer(neckTex, { side: THREE.DoubleSide }),
     gold: new THREE.MeshStandardMaterial({ color: 0xd9b25c, metalness: 1, roughness: 0.32, envMapIntensity: 1.5 }),
-    peg: new THREE.MeshPhysicalMaterial({ color: 0x5c1e0e, roughness: 0.34, clearcoat: 0.9, clearcoatRoughness: 0.12, envMapIntensity: 1 }),
+    peg: new THREE.MeshPhysicalMaterial({ color: 0x7a3a1c, roughness: 0.34, clearcoat: 0.9, clearcoatRoughness: 0.12, envMapIntensity: 1 }),
     fret: new THREE.MeshStandardMaterial({ color: 0xf0e8d4, metalness: 1, roughness: 0.18, envMapIntensity: 1.9 }),
     bone: new THREE.MeshPhysicalMaterial({ color: 0xf2ead8, roughness: 0.42, clearcoat: 0.4, clearcoatRoughness: 0.35, envMapIntensity: 0.8 }),
     steel: new THREE.MeshStandardMaterial({ color: 0xebe5d8, metalness: 1, roughness: 0.2, envMapIntensity: 1.4 }),
@@ -400,16 +400,16 @@ async function init() {
 
   /* dark ball-headed pegs (khunti), lightly fluted; ~9 cm, tarab pegs ~4-5 cm */
   const pegGeo = new THREE.LatheGeometry([
-    [0, 0], [0.4, 0], [0.42, 3.0], [0.6, 3.2], [0.6, 3.6], [0.45, 3.9], [0.5, 4.3], [0.95, 4.8],
-    [1.4, 5.5], [1.6, 6.4], [1.5, 7.3], [1.1, 8.0], [0.55, 8.4], [0.3, 8.6], [0.36, 8.85], [0, 9.05]
+    [0, 0], [0.4, 0], [0.42, 3.4], [0.62, 3.6], [0.62, 4.0], [0.5, 4.3], [0.95, 4.6],
+    [1.45, 5.1], [1.7, 5.9], [1.72, 6.6], [1.5, 7.4], [1.0, 7.95], [0.45, 8.2], [0.3, 8.4], [0.36, 8.6], [0, 8.75]
   ].map(p => new THREE.Vector2(p[0], p[1])), 48);
   {
     // melon-fluted heads, like the pegs on his sitar
     const p = pegGeo.attributes.position;
     for (let i = 0; i < p.count; i++) {
       const y = p.getY(i);
-      if (y > 4.7 && y < 8.45) {
-        const x = p.getX(i), z = p.getZ(i), f = 1 + 0.085 * Math.cos(10 * Math.atan2(x, z));
+      if (y > 4.6 && y < 8.2) {
+        const x = p.getX(i), z = p.getZ(i), f = 1 + 0.1 * Math.cos(8 * Math.atan2(x, z)) * Math.sin(Math.PI * (y - 4.6) / 3.6);
         p.setX(i, x * f); p.setZ(i, z * f);
       }
     }
@@ -426,11 +426,11 @@ async function init() {
   // pegs as on his sitar: all side pegs on one side, two through the face of the peg box
   const SIDE = -1, FACE_X = 1.6;
   const headPegs = [[0, 123.4], [0, 114.1], [SIDE, 124.3], [SIDE, 117.0], [SIDE, 110.1]];
-  headPegs.forEach(p => peg(p[0], p[1], p[0] ? 1.25 : 1.05, undefined, FACE_X));
+  headPegs.forEach(p => peg(p[0], p[1], p[0] ? 1.4 : 1.1, undefined, FACE_X));
   const sidePegs = [100.6, 92.4];                       // two chikari pegs below the nut
-  sidePegs.forEach(y => peg(SIDE, y, 1.18));
+  sidePegs.forEach(y => peg(SIDE, y, 1.3));
   const tarabY = [88.0, 84.3, 80.8, 77.2, 73.4, 67.4, 62.2, 59.7, 57.1, 54.4, 50.9, 47.8, 45.6];
-  tarabY.forEach((y, k) => peg(SIDE, y, 0.58 + (y - 45) / 43 * 0.16, MIDZ + (k % 2 ? 0.8 : -0.8)));
+  tarabY.forEach((y, k) => peg(SIDE, y, 0.78 + (y - 45) / 43 * 0.2, MIDZ + (k % 2 ? 0.8 : -0.8)));
 
   /* strings: 7 playing strings + 13 tarab */
   const zAt = 2.75;
@@ -466,12 +466,12 @@ async function init() {
   inst.position.y = -0.64;
   const spin = new THREE.Group(); spin.add(inst);
   const tilt = new THREE.Group(); tilt.add(spin); scene.add(tilt);
-  tilt.rotation.set(0.08, 0, -0.46);
+  tilt.rotation.set(0.08, 0, -0.93);
 
   /* ---------- lantern motes ---------- */
   const N = 90, mp = new Float32Array(N * 3), ms = new Float32Array(N);
   for (let i = 0; i < N; i++) {
-    mp[i * 3] = (rnd() - 0.5) * 1.3; mp[i * 3 + 1] = (rnd() - 0.5) * 1.8; mp[i * 3 + 2] = rnd() * 0.7 - 0.3;
+    mp[i * 3] = (rnd() - 0.5) * 1.9; mp[i * 3 + 1] = (rnd() - 0.5) * 1.4; mp[i * 3 + 2] = rnd() * 0.7 - 0.3;
     ms[i] = rnd();
   }
   const mg = new THREE.BufferGeometry();
@@ -543,9 +543,9 @@ async function init() {
       spin.rotation.y = pose;
       if (upright) tilt.rotation.set(0, 0, 0);
     } else if (!reduce) {
-      spin.rotation.y = 0.45 + Math.sin(s * 0.35) * 0.5 + cx * 0.6 + scrollK * 0.8;
+      spin.rotation.y = 0.2 + Math.sin(s * 0.35) * 0.42 + cx * 0.5 + scrollK * 0.7;
       tilt.rotation.x = 0.08 + cy * 0.18;
-      tilt.rotation.z = -0.46 + Math.sin(s * 0.5) * 0.025;
+      tilt.rotation.z = -0.93 + Math.sin(s * 0.5) * 0.025;
       tilt.position.y = Math.sin(s * 0.9) * 0.03;
     } else {
       spin.rotation.y = 0.35;

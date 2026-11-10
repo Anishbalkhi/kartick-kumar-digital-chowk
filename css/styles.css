@@ -105,16 +105,24 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   100%{transform:translateY(0) rotateZ(-1.5deg) rotateY(-6deg)}}
 @media(max-width:860px){.hero-sitar-wrap{left:50%;height:46vh}}
 /* still image (no-GPU fallback): his sitar photographed on the diagonal, so size it by width too */
-.hero-sitar-wrap:not(.is-3d){height:min(52vh,470px)}
+.hero-sitar-wrap:not(.is-3d){height:min(52vh,470px);left:25%}
+.hero-sitar-wrap:not(.is-3d)::after{content:"";position:absolute;left:4%;right:30%;bottom:-6%;height:12%;
+  border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.55),transparent);filter:blur(6px);z-index:-1}
+.hero-sitar-wrap:not(.is-3d) .hero-sitar-float{animation:floatStill 8s ease-in-out infinite}
+.hero-sitar-wrap:not(.is-3d) .hero-sitar{
+  filter:brightness(.9) saturate(1.05) sepia(.08)
+    drop-shadow(0 0 1px rgba(255,214,150,.55)) drop-shadow(14px 0 26px rgba(255,170,80,.28))
+    drop-shadow(0 34px 34px rgba(0,0,0,.6))}
+@keyframes floatStill{0%,100%{transform:translateY(0) rotate(-.8deg)}50%{transform:translateY(-14px) rotate(.8deg)}}
 @media(max-width:860px){.hero-sitar-wrap:not(.is-3d){height:min(40vh,66vw)}}
 /* real-time 3D sitar (js/sitar3d.js); the <img> above is the fallback */
-.hero-sitar-wrap.is-3d{height:min(82vh,760px);aspect-ratio:.74}
+.hero-sitar-wrap.is-3d{height:min(66vh,600px);aspect-ratio:1.2;left:27%}
 .hero-sitar-wrap.is-3d::before{content:"";position:absolute;inset:8% 4%;border-radius:50%;
   background:radial-gradient(closest-side,rgba(255,170,90,.16),rgba(255,150,70,.05) 60%,transparent);pointer-events:none}
 .hero-sitar-wrap.is-3d .hero-sitar-float{display:none}
 .hero-sitar-3d{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .9s ease}
 .hero-sitar-3d.on{opacity:1}
-@media(max-width:860px){.hero-sitar-wrap.is-3d{height:58vh}}
+@media(max-width:860px){.hero-sitar-wrap.is-3d{height:auto;width:min(96vw,560px);left:50%}}
 
 /* ======================= SECTION SHELL ======================= */
 section{position:relative}
