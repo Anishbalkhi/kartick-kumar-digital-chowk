@@ -345,8 +345,8 @@ async function init() {
     pegStem: new THREE.MeshPhysicalMaterial({ color: 0xa8683c, roughness: 0.4, clearcoat: 0.7, clearcoatRoughness: 0.2, envMapIntensity: 0.9 }),
     fret: new THREE.MeshStandardMaterial({ color: 0xece8de, metalness: 1, roughness: 0.18, envMapIntensity: 1.8 }),
     bone: new THREE.MeshPhysicalMaterial({ color: 0xf2ead8, roughness: 0.42, clearcoat: 0.4, clearcoatRoughness: 0.35, envMapIntensity: 0.8 }),
-    steel: new THREE.MeshStandardMaterial({ color: 0xebe5d8, metalness: 1, roughness: 0.2, envMapIntensity: 1.4 }),
-    bronze: new THREE.MeshStandardMaterial({ color: 0xcf8f4c, metalness: 1, roughness: 0.25, envMapIntensity: 1.4 })
+    steel: new THREE.MeshStandardMaterial({ color: 0xebe5d8, metalness: 1, roughness: 0.2, envMapIntensity: 1.4, emissive: 0xfff1d0, emissiveIntensity: 0 }),
+    bronze: new THREE.MeshStandardMaterial({ color: 0xcf8f4c, metalness: 1, roughness: 0.25, envMapIntensity: 1.4, emissive: 0xffc070, emissiveIntensity: 0 })
   };
 
   /* ---------- geometry helpers ---------- */
@@ -359,6 +359,7 @@ async function init() {
     if (rot) m.rotation.set(rot[0], rot[1], rot[2]);
     (parent || inst).add(m); return m;
   };
+  const strings = [];
   const wire = (pts, r, mat) => {
     for (let i = 0; i < pts.length - 1; i++) {
       const a = pts[i], b = pts[i + 1], d = V(0, 0, 0).subVectors(b, a), len = d.length();
@@ -366,6 +367,7 @@ async function init() {
       m.position.copy(a).addScaledVector(d, 0.5);
       m.quaternion.setFromUnitVectors(UP, d.normalize());
       inst.add(m);
+      if (len > 20) strings.push({ m, base: m.position.clone(), phase: strings.length * 1.7 });   // playing lengths vibrate
     }
   };
 
@@ -490,6 +492,7 @@ async function init() {
   const spin = new THREE.Group(); spin.add(inst);
   const tilt = new THREE.Group(); tilt.add(spin);
   const holder = new THREE.Group(); holder.add(tilt); scene.add(holder);
+  const glint = new THREE.PointLight(0xffdca0, 0, 0.9, 1.6); spin.add(glint);
 
   /* ---------- lantern motes (travel with the sitar) ---------- */
   const N = 90, mp = new Float32Array(N * 3), ms = new Float32Array(N);
@@ -501,17 +504,17 @@ async function init() {
   mg.setAttribute('position', new THREE.BufferAttribute(mp, 3));
   mg.setAttribute('aSeed', new THREE.BufferAttribute(ms, 1));
   const moteMat = new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uScale: { value: 1 } },
+    uniforms: { uTime: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uScale: { value: 1 }, uBoost: { value: 0 } },
     vertexShader: `
-      attribute float aSeed; uniform float uTime; uniform float uPR; uniform float uScale; varying float vA;
+      attribute float aSeed; uniform float uTime; uniform float uPR; uniform float uScale; uniform float uBoost; varying float vA;
       void main(){
         vec3 p = position;
         p.y = mod(p.y + 0.9 + uTime * (0.02 + aSeed * 0.03), 1.8) - 0.9;
         p.x += sin(uTime * 0.6 + aSeed * 20.0) * 0.03;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         float tw = 0.5 + 0.5 * sin(uTime * (1.4 + aSeed * 2.0) + aSeed * 30.0);
-        vA = tw * (1.0 - smoothstep(0.55, 0.9, abs(p.y)));
-        gl_PointSize = (2.0 + aSeed * 3.5) * uPR * uScale * (6.0 / -mv.z);
+        vA = tw * (1.0 - smoothstep(0.55, 0.9, abs(p.y))) * (1.0 + uBoost * 1.6);
+        gl_PointSize = (2.0 + aSeed * 3.5) * (1.0 + uBoost * 0.6) * uPR * uScale * (6.0 / -mv.z);
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `
@@ -659,6 +662,8 @@ async function init() {
       pts.map(f).join(', ') + ', ' + f(pts[0]) + ', 0 0)';
   }
 
+  let lastScroll = window.pageYOffset, lastT = 0, vel = 0, pluck = 0, nextPluck = 2.5, lastStage = -1;
+  const trail = { x: 0, y: 0 };
   function render(t) {
     const s = t / 1000;
     cx += (mx - cx) * 0.05; cy += (my - cy) * 0.05;
@@ -689,22 +694,56 @@ async function init() {
     const k = p.len * wpp / MODEL_LEN;
     holder.position.set((p.x - vw / 2) * wpp, -(p.y - vh / 2) * wpp, 0);
     holder.scale.setScalar(k);
-    motes.position.copy(holder.position); motes.scale.setScalar(k * 1.1);
+    motes.scale.setScalar(k * 1.1);
     moteMat.uniforms.uScale.value = k;
 
     const lean = -THREE.MathUtils.degToRad(90 - p.ang);
+
+    /* ---------- life: scroll speed, plucks, glint, trail ---------- */
+    const dt = lastT ? Math.min(0.1, s - lastT) : 0.016; lastT = s;
+    const sy = window.pageYOffset, rawVel = (sy - lastScroll) / Math.max(dt, 0.008); lastScroll = sy;
+    vel += (Math.max(-3000, Math.min(3000, rawVel)) - vel) * Math.min(1, dt * 6);          // smoothed px/s
+    const speed = Math.min(1, Math.abs(vel) / 1400);
+    // a pluck every few seconds while still, and one each time it arrives somewhere new
+    const stage = (lift > 0.97 ? 1 : 0) + (merge > 0.97 ? 2 : 0);   // which resting place it has reached
+    if (stage !== lastStage && lastStage !== -1 && speed < 0.2) pluck = 1;
+    if (speed < 0.05) lastStage = stage;
+    if (s > nextPluck) { pluck = 1; nextPluck = s + 5 + Math.random() * 3; }
+    pluck *= Math.exp(-dt * 1.6);
+    if (!reduce) {
+      const shimmer = pluck * (0.55 + 0.45 * Math.sin(s * 38));
+      M.steel.emissiveIntensity = 0.9 * shimmer; M.bronze.emissiveIntensity = 0.7 * shimmer;
+      for (const st of strings) {                        // the playing strings tremble as they ring
+        const w = Math.sin(s * 55 + st.phase) * pluck * 0.09;
+        st.m.position.set(st.base.x + w, st.base.y, st.base.z + w * 0.5);
+      }
+      // a warm glint gliding from the gourd up to the pegs and back
+      const g = 0.5 - 0.5 * Math.cos(s * 0.55);
+      glint.position.set(3 * Math.sin(s * 1.3), -0.6 + g * 1.28, 0.08);
+      glint.intensity = (0.9 + 0.6 * pluck) * (1 - merge);
+    }
+    const flying = clamp01(speed * 1.4) * (1 - mounted) * (1 - merge);
+    moteMat.uniforms.uBoost.value += (flying - moteMat.uniforms.uBoost.value) * Math.min(1, dt * 4);
+    // the sparkles lag behind the sitar, so they stream out as a trail when it moves
+    trail.x += (holder.position.x - trail.x) * Math.min(1, dt * 3);
+    trail.y += (holder.position.y - trail.y) * Math.min(1, dt * 3);
     if (pose !== null) {
       spin.rotation.y = pose;
       tilt.rotation.set(upright ? 0 : 0.08, 0, upright ? 0 : lean);
     } else if (!reduce) {
       const calm = (1 - merge) * (1 - 0.75 * mounted);   // steady on its stand, face-on in the photograph
-      spin.rotation.y = (0.2 + Math.sin(s * 0.35) * 0.3 + cx * 0.45) * calm + 0.12 * mounted + turns;
-      tilt.rotation.set((0.08 + cy * 0.15) * calm, 0, lean + Math.sin(s * 0.5) * 0.02 * calm);
-      holder.position.y += Math.sin(s * 0.9) * 0.012 * k * (1 - mounted);   // no floating bob while mounted
+      const bank = Math.max(-1, Math.min(1, vel / 1600)) * calm;          // lean into the scroll
+      spin.rotation.y = (0.2 + Math.sin(s * 0.35) * 0.3 + Math.sin(s * 0.13) * 0.18 + cx * 0.45 + bank * 0.35) * calm
+                        + 0.12 * mounted + Math.sin(s * 0.6) * 0.05 * mounted * (1 - merge) + turns;
+      tilt.rotation.set((0.08 + cy * 0.15 + Math.sin(s * 0.42) * 0.05 + bank * 0.12) * calm, 0,
+                        lean + (Math.sin(s * 0.5) * 0.035 - bank * 0.06) * calm);
+      holder.position.y += (Math.sin(s * 0.9) * 0.016 + Math.sin(s * 2.3) * 0.004) * k * (1 - mounted);
+      holder.position.x += Math.sin(s * 0.47) * 0.008 * k * (1 - mounted) * (1 - merge);
     } else {
       spin.rotation.y = 0.25;
       tilt.rotation.set(0.08, 0, lean);
     }
+    motes.position.set(trail.x || holder.position.x, trail.y || holder.position.y, 0);
     moteMat.uniforms.uTime.value = s;
     renderer.render(scene, camera);
     if (!shown) {
