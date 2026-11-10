@@ -151,7 +151,7 @@
     lbi.src=fig.querySelector('img').src; lbi.alt=fig.querySelector('img').alt;
     lbc.textContent=fig.getAttribute('data-cap')||''; lb.classList.add('on');
   });
-  function closeLb(){ lb.classList.remove('on'); lbi.src=''; }
+  function closeLb(){ if(!lb) return; lb.classList.remove('on'); lbi.src=''; }
   var lbx=document.getElementById('lbx'); lbx && lbx.addEventListener('click', closeLb);
   lb && lb.addEventListener('click', function(e){ if(e.target===lb) closeLb(); });
   document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeLb(); });

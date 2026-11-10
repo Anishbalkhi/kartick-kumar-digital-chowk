@@ -51,8 +51,7 @@ async function init() {
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(28, 1.2, 0.1, 50);
-  camera.position.set(0, 0, 2.3);
+  const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 50);   // fitted to the window in resize()
 
   /* ---------- deterministic randomness (same grain every load) ---------- */
   let seed = 11;
@@ -461,14 +460,15 @@ async function init() {
     window.__sitarDims = { overall: size(inst), gourd: size(gourdGroup), scale: SCALE, nut: NUT, neck: [NW, ND] };
   }
 
-  /* ---------- assemble: tilt (in-plane lean) -> spin (around its own length) ---------- */
+  /* ---------- assemble: holder (screen place + size) -> tilt (lean) -> spin (around its length) ---------- */
   inst.scale.setScalar(0.01);
   inst.position.y = -0.64;
+  const MODEL_LEN = 1.3;                         // world length of the sitar at holder scale 1
   const spin = new THREE.Group(); spin.add(inst);
-  const tilt = new THREE.Group(); tilt.add(spin); scene.add(tilt);
-  tilt.rotation.set(0.08, 0, -0.93);
+  const tilt = new THREE.Group(); tilt.add(spin);
+  const holder = new THREE.Group(); holder.add(tilt); scene.add(holder);
 
-  /* ---------- lantern motes ---------- */
+  /* ---------- lantern motes (travel with the sitar) ---------- */
   const N = 90, mp = new Float32Array(N * 3), ms = new Float32Array(N);
   for (let i = 0; i < N; i++) {
     mp[i * 3] = (rnd() - 0.5) * 1.9; mp[i * 3 + 1] = (rnd() - 0.5) * 1.4; mp[i * 3 + 2] = rnd() * 0.7 - 0.3;
@@ -478,9 +478,9 @@ async function init() {
   mg.setAttribute('position', new THREE.BufferAttribute(mp, 3));
   mg.setAttribute('aSeed', new THREE.BufferAttribute(ms, 1));
   const moteMat = new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uPR: { value: renderer.getPixelRatio() } },
+    uniforms: { uTime: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uScale: { value: 1 } },
     vertexShader: `
-      attribute float aSeed; uniform float uTime; uniform float uPR; varying float vA;
+      attribute float aSeed; uniform float uTime; uniform float uPR; uniform float uScale; varying float vA;
       void main(){
         vec3 p = position;
         p.y = mod(p.y + 0.9 + uTime * (0.02 + aSeed * 0.03), 1.8) - 0.9;
@@ -488,7 +488,7 @@ async function init() {
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         float tw = 0.5 + 0.5 * sin(uTime * (1.4 + aSeed * 2.0) + aSeed * 30.0);
         vA = tw * (1.0 - smoothstep(0.55, 0.9, abs(p.y)));
-        gl_PointSize = (2.0 + aSeed * 3.5) * uPR * (3.6 / -mv.z);
+        gl_PointSize = (2.0 + aSeed * 3.5) * uPR * uScale * (6.0 / -mv.z);
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `
@@ -504,30 +504,75 @@ async function init() {
   motes.visible = pose === null;
   scene.add(motes);
 
-  /* ---------- mount ---------- */
-  let visible = true, raf = 0, shown = false, still = pose !== null;
+  /* ---------- the sitar's resting places, one per section ----------
+     Each stop is pinned to a page element: `at` is a point in that element's box
+     (fractions), `len` the sitar's on-screen length, `ang` its angle above horizontal.
+     Moving into a stop happens while the element's top scrolls from `from` to `to`
+     (fractions of the viewport height); the sitar lifts, turns once and glides over. */
+  const mobile = () => window.matchMedia('(max-width: 860px)').matches;
+  const STOPS = [
+    // phones crop the image to its middle, so the sitar sits a little smaller and further left there
+    { el: '.chowk-stage', at: () => mobile() ? [0.555, 0.27] : [0.59, 0.245],
+      len: r => r.width * (mobile() ? 0.31 : 0.4), ang: 30 },
+    { el: '.hero', at: () => mobile() ? [0.5, 0.5] : [0.27, 0.5],
+      len: r => mobile() ? Math.min(r.width * 0.95, r.height * 0.62) : Math.min(r.width * 0.42, r.height * 0.7),
+      ang: 37, from: 0.85, to: 0.1 },
+    { el: '.jr-street', at: [0.37, 0.062], len: r => r.width * 0.27, ang: 11, from: 0.95, to: 0.3, desktopOnly: true }
+  ];
+  const ease = t => t * t * (3 - 2 * t);
+  const clamp01 = v => Math.max(0, Math.min(1, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  function placement() {
+    const vh = window.innerHeight;
+    let p = null, turns = 0, hop = 0;
+    for (const st of STOPS) {
+      if (st.desktopOnly && mobile()) continue;
+      const el = document.querySelector(st.el);
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      const at = typeof st.at === 'function' ? st.at() : st.at;
+      const q = { x: r.left + r.width * at[0], y: r.top + r.height * at[1], len: st.len(r), ang: st.ang };
+      if (!p) { p = q; continue; }
+      // never mid-flight before you scroll: start no lower than where this element sits at the top of the page
+      const fromPx = Math.min(st.from * vh, r.top + window.pageYOffset - 1);
+      const toPx = Math.min(st.to * vh, fromPx - 0.35 * vh);
+      const s = ease(clamp01((fromPx - r.top) / (fromPx - toPx)));
+      p = { x: lerp(p.x, q.x, s), y: lerp(p.y, q.y, s), len: lerp(p.len, q.len, s), ang: lerp(p.ang, q.ang, s) };
+      turns += s;
+      hop = Math.max(hop, Math.sin(Math.PI * s));
+    }
+    if (p) p.y -= hop * vh * 0.06;          // a small lift mid-flight
+    return { p, turns, hop };
+  }
+
+  /* ---------- mount: one fixed, page-wide layer above the sections ---------- */
+  let raf = 0, shown = false, still = pose !== null || reduce, wasOff = false;
   let last = 0, frames = 0, slowMs = 0, tier = 0;
   const cvs = renderer.domElement;
-  cvs.className = 'hero-sitar-3d';
+  cvs.className = 'kk-sitar-layer';
   cvs.setAttribute('role', 'img');
-  cvs.setAttribute('aria-label', 'Ornate carved sitar, rendered in 3D');
+  cvs.setAttribute('aria-label', 'Pandit Kartick Kumar\'s sitar in 3D, resting on the chowk and moving through the page as you scroll');
+  document.documentElement.classList.add('kk-3d');
   wrap.classList.add('is-3d');
-  wrap.appendChild(cvs);
-  // if the GPU drops the context, fall back to the static image
+  document.body.appendChild(cvs);
+  // if the GPU drops the context, fall back to the still images
   cvs.addEventListener('webglcontextlost', e => {
     e.preventDefault(); still = true;
     if (raf) cancelAnimationFrame(raf);
-    wrap.classList.remove('is-3d'); cvs.remove();
+    document.documentElement.classList.remove('kk-3d'); wrap.classList.remove('is-3d'); cvs.remove();
   });
 
+  const pixelRatio = () => Math.min(window.devicePixelRatio || 1, tier ? 1 : 1.5);
   function resize() {
-    const w = wrap.clientWidth, h = wrap.clientHeight;
-    if (!w || !h) return;
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h; camera.updateProjectionMatrix();
-    if (reduce || still) render(performance.now());
+    renderer.setPixelRatio(pixelRatio());
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+    moteMat.uniforms.uPR.value = renderer.getPixelRatio();
+    requestRender();
   }
-  if (window.ResizeObserver) new ResizeObserver(resize).observe(wrap); else window.addEventListener('resize', resize);
+  camera.fov = 28; camera.position.set(0, 0, 6); camera.updateProjectionMatrix();
+  const worldPerPx = () => 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / window.innerHeight;
 
   /* ---------- motion ---------- */
   let mx = 0, my = 0, cx = 0, cy = 0;
@@ -538,24 +583,49 @@ async function init() {
   function render(t) {
     const s = t / 1000;
     cx += (mx - cx) * 0.05; cy += (my - cy) * 0.05;
-    const scrollK = Math.max(0, Math.min(-hero.getBoundingClientRect().top / window.innerHeight, 1));
+    const { p, turns } = placement();
+    if (!p) return;
+    const vh = window.innerHeight, vw = window.innerWidth;
+    const off = p.y < -p.len * 0.7 || p.y > vh + p.len * 0.7 || p.x < -p.len || p.x > vw + p.len;
+    if (off) { if (!wasOff) { renderer.clear(); wasOff = true; } return; }
+    wasOff = false;
+
+    const wpp = worldPerPx();
+    const k = p.len * wpp / MODEL_LEN;
+    holder.position.set((p.x - vw / 2) * wpp, -(p.y - vh / 2) * wpp, 0);
+    holder.scale.setScalar(k);
+    motes.position.copy(holder.position); motes.scale.setScalar(k * 1.1);
+    moteMat.uniforms.uScale.value = k;
+
+    const lean = -THREE.MathUtils.degToRad(90 - p.ang);
     if (pose !== null) {
       spin.rotation.y = pose;
-      if (upright) tilt.rotation.set(0, 0, 0);
+      tilt.rotation.set(upright ? 0 : 0.08, 0, upright ? 0 : lean);
     } else if (!reduce) {
-      spin.rotation.y = 0.2 + Math.sin(s * 0.35) * 0.42 + cx * 0.5 + scrollK * 0.7;
-      tilt.rotation.x = 0.08 + cy * 0.18;
-      tilt.rotation.z = -0.93 + Math.sin(s * 0.5) * 0.025;
-      tilt.position.y = Math.sin(s * 0.9) * 0.03;
+      spin.rotation.y = 0.2 + Math.sin(s * 0.35) * 0.3 + cx * 0.45 + turns * Math.PI * 2;
+      tilt.rotation.set(0.08 + cy * 0.15, 0, lean + Math.sin(s * 0.5) * 0.02);
+      holder.position.y += Math.sin(s * 0.9) * 0.012 * k;
     } else {
-      spin.rotation.y = 0.35;
+      spin.rotation.y = 0.25;
+      tilt.rotation.set(0.08, 0, lean);
     }
     moteMat.uniforms.uTime.value = s;
     renderer.render(scene, camera);
+    if (!shown) { shown = true; cvs.classList.add('on'); }
   }
 
-  // Adaptive quality: on a slow GPU drop to 1× resolution, and if that is
-  // still slow, hold a still frame instead of a stuttering animation.
+  // on-demand rendering (scroll / resize) when not animating continuously
+  let pending = false;
+  function requestRender() {
+    if (pending || (!still && raf)) return;
+    pending = true;
+    requestAnimationFrame(t => { pending = false; render(t); });
+  }
+  window.addEventListener('scroll', requestRender, { passive: true });
+  window.addEventListener('resize', resize);
+
+  // Adaptive quality: on a slow GPU drop to 1x resolution, and if that is
+  // still slow, render only when the page scrolls instead of every frame.
   function loop(t) {
     raf = 0;
     if (last) {
@@ -563,24 +633,20 @@ async function init() {
       if (frames > 5 && frames < 70) slowMs += dt;
       if (frames === 69 && slowMs / 64 > 45) {
         if (tier === 0 && renderer.getPixelRatio() > 1) {
-          tier = 1; renderer.setPixelRatio(1); moteMat.uniforms.uPR.value = 1; resize();
-          frames = 0; slowMs = 0;
+          tier = 1; resize(); frames = 0; slowMs = 0;
         } else { still = true; }
       }
     }
     last = t; frames++;
     render(t);
-    if (!shown) { shown = true; cvs.classList.add('on'); }
-    if (visible && !reduce && !still) raf = requestAnimationFrame(loop);
+    if (!still) raf = requestAnimationFrame(loop);
   }
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(es => {
-      visible = es[0].isIntersecting;
-      if (visible && !raf && !reduce && !still) { last = 0; raf = requestAnimationFrame(loop); }
-    }).observe(hero);
-  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { if (raf) cancelAnimationFrame(raf); raf = 0; }
+    else if (!still && !raf) { last = 0; raf = requestAnimationFrame(loop); }
+  });
   resize();
-  raf = requestAnimationFrame(loop);
+  if (still) requestRender(); else raf = requestAnimationFrame(loop);
 }
 
 init();
