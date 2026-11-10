@@ -569,7 +569,7 @@ async function init() {
 
   function placement() {
     const vh = window.innerHeight;
-    let p = null, prevQ = null, turns = 0, hop = 0, merge = 0, lift = -1;
+    let p = null, prevQ = null, turns = 0, spins = 0, hop = 0, merge = 0, lift = -1;
     for (const st of STOPS) {
       if (st.desktopOnly && mobile()) continue;
       const el = document.querySelector(st.el);
@@ -596,13 +596,13 @@ async function init() {
         if (st.anchor) p = { ...p, y: p.y + window.pageYOffset };
       }
       p = { x: lerp(p.x, q.x, s), y: lerp(p.y, q.y, s), len: lerp(p.len, q.len, s), ang: lerp(p.ang, q.ang, s) };
-      if (st.turn !== false) turns += Math.sin(Math.PI * s) * 0.45;   // a gentle sway in flight, never showing its back
+      if (st.turn !== false) { turns += Math.sin(Math.PI * s) * 0.45; spins += s; }   // sway + one full turn per flight
       if (st.merge) merge = s;
       if (lift < 0) lift = s;               // the first flight: off the monument
       prevQ = q;
     }
     if (p) p.y -= hop * vh * 0.06;          // a small lift mid-flight
-    return { p, turns, hop, merge, lift: Math.max(0, lift) };
+    return { p, turns, spins, hop, merge, lift: Math.max(0, lift) };
   }
 
   /* ---------- mount: one fixed, page-wide layer above the sections ---------- */
@@ -662,12 +662,23 @@ async function init() {
       pts.map(f).join(', ') + ', ' + f(pts[0]) + ', 0 0)';
   }
 
-  let lastScroll = window.pageYOffset, lastT = 0, vel = 0, pluck = 0, nextPluck = 2.5, lastStage = -1;
+  let lastScroll = window.pageYOffset, lastT = 0, vel = 0, pluck = 0, nextPluck = 2.5, lastStage = -1, lastFrame = 0, disp = null;
   const trail = { x: 0, y: 0 };
   function render(t) {
     const s = t / 1000;
     cx += (mx - cx) * 0.05; cy += (my - cy) * 0.05;
-    const { p, turns, merge, lift } = placement();
+    const target = placement();
+    const { merge, lift } = target;
+    // follow the scroll target with a smooth, critically-damped glide (no jumps on wheel steps)
+    const dts = lastFrame ? Math.min(0.1, (t - lastFrame) / 1000) : 1; lastFrame = t;
+    const follow = still || pose !== null || !disp ? 1 : 1 - Math.exp(-dts * 7.5);
+    if (target.p) {
+      if (!disp || Math.abs(target.p.x - disp.x) > window.innerWidth * 1.5) disp = { ...target.p, turns: target.turns, spins: target.spins };
+      for (const key of ['x', 'y', 'len', 'ang']) disp[key] += (target.p[key] - disp[key]) * follow;
+      disp.turns += (target.turns - disp.turns) * follow;
+      disp.spins += (target.spins - disp.spins) * follow;
+    }
+    const p = target.p && disp, turns = disp ? disp.turns : 0, spins = disp ? disp.spins : 0;
     const mounted = 1 - clamp01(lift / 0.25);         // 1 while resting on the stand
     warmLight(mounted);
     // the hand-off into the photograph: tighten a clip to the photo frame, then crossfade with a soft glow
@@ -733,10 +744,16 @@ async function init() {
     } else if (!reduce) {
       const calm = (1 - merge) * (1 - 0.75 * mounted);   // steady on its stand, face-on in the photograph
       const bank = Math.max(-1, Math.min(1, vel / 1600)) * calm;          // lean into the scroll
-      spin.rotation.y = (0.2 + Math.sin(s * 0.35) * 0.3 + Math.sin(s * 0.13) * 0.18 + cx * 0.45 + bank * 0.35) * calm
-                        + 0.12 * mounted + Math.sin(s * 0.6) * 0.05 * mounted * (1 - merge) + turns;
-      tilt.rotation.set((0.08 + cy * 0.15 + Math.sin(s * 0.42) * 0.05 + bank * 0.12) * calm, 0,
-                        lean + (Math.sin(s * 0.5) * 0.035 - bank * 0.06) * calm);
+      // a slow showcase swing whenever it is away from the stand and the photo
+      const show = (1 - mounted) * (1 - merge) * Math.sin(s * 0.21) * 0.55;
+      const flightSpin = ease(spins % 1) + Math.floor(spins);           // one smooth full turn per flight
+      // all the idle swings together stay within about +/-50 degrees, so it rests front-facing
+      const sway = 0.9 * Math.tanh((Math.sin(s * 0.35) * 0.42 + Math.sin(s * 0.13) * 0.24 + cx * 0.55 + bank * 0.45 + show) / 0.9);
+      spin.rotation.y = (0.15 + sway) * calm
+                        + 0.12 * mounted + Math.sin(s * 0.6) * 0.06 * mounted * (1 - merge) + turns
+                        + flightSpin * Math.PI * 2;                           // whole turns, so it lands face-on
+      tilt.rotation.set((0.08 + cy * 0.18 + Math.sin(s * 0.42) * 0.08 + Math.sin(s * 0.17) * 0.05 + bank * 0.14) * calm, 0,
+                        lean + (Math.sin(s * 0.5) * 0.05 + Math.sin(s * 0.23) * 0.03 - bank * 0.07) * calm);
       holder.position.y += (Math.sin(s * 0.9) * 0.016 + Math.sin(s * 2.3) * 0.004) * k * (1 - mounted);
       holder.position.x += Math.sin(s * 0.47) * 0.008 * k * (1 - mounted) * (1 - merge);
     } else {
