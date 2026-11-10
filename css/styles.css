@@ -104,6 +104,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   50%{transform:translateY(-24px) rotateZ(1.5deg) rotateY(6deg)}
   100%{transform:translateY(0) rotateZ(-1.5deg) rotateY(-6deg)}}
 @media(max-width:860px){.hero-sitar-wrap{left:50%;height:46vh}}
+/* still image (no-GPU fallback): his sitar photographed on the diagonal, so size it by width too */
+.hero-sitar-wrap:not(.is-3d){height:min(52vh,470px)}
+@media(max-width:860px){.hero-sitar-wrap:not(.is-3d){height:min(40vh,66vw)}}
 /* real-time 3D sitar (js/sitar3d.js); the <img> above is the fallback */
 .hero-sitar-wrap.is-3d{height:min(82vh,760px);aspect-ratio:.74}
 .hero-sitar-wrap.is-3d::before{content:"";position:absolute;inset:8% 4%;border-radius:50%;
@@ -121,104 +124,202 @@ section{position:relative}
 .sec-head .deva{color:var(--gold-2);font-size:clamp(1.1rem,3.4vw,1.7rem)}
 .sec-head p{max-width:62ch;color:var(--fg-2);font-size:1.06rem}
 
-/* ======================= THE JOURNEY (street) ======================= */
-.journey-street{position:relative;overflow:hidden;margin-top:-1px;padding:clamp(28px,4vw,52px) 0 clamp(54px,7vw,96px);
-  background:linear-gradient(180deg,#140d07 0%, #1a1109 32%, #1e1409 62%, #120b06 100%)}
-.js-sky{display:none}
-/* continuous dark gallery wall behind the photos */
-.js-wall{position:absolute;left:0;right:0;top:4%;height:50%;z-index:0;
-  background:linear-gradient(180deg,#241a10,#1a120a 70%, transparent);
-  box-shadow:inset 0 -40px 60px -30px #000}
-.js-ground{position:absolute;left:0;right:0;bottom:0;height:38%;z-index:1;
+/* ======================= THE JOURNEY — a winding street of ten stories ======================= */
+#journey.jr{position:relative;overflow:hidden;margin-top:-1px;padding:clamp(40px,6vw,84px) 0 clamp(70px,9vw,120px);
   background:
-    repeating-linear-gradient(90deg, rgba(0,0,0,.14) 0 2px, transparent 2px 46px),
-    linear-gradient(180deg, rgba(74,48,22,.7), rgba(26,16,7,.95));
-  box-shadow:inset 0 40px 80px -40px rgba(0,0,0,.85)}
-.js-path{position:absolute;left:4%;right:4%;bottom:20%;height:3px;z-index:2;
-  background:linear-gradient(90deg,transparent,rgba(255,190,90,.6) 10%,rgba(255,190,90,.6) 90%,transparent);
-  filter:blur(1px);box-shadow:0 0 34px 8px rgba(255,170,70,.35)}
+    radial-gradient(40% 18% at 6% 4%, rgba(214,72,128,.13), transparent 70%),
+    radial-gradient(36% 16% at 96% 30%, rgba(214,72,128,.10), transparent 70%),
+    radial-gradient(40% 18% at 4% 62%, rgba(214,72,128,.09), transparent 70%),
+    radial-gradient(36% 16% at 98% 88%, rgba(214,72,128,.09), transparent 70%),
+    radial-gradient(120% 50% at 50% 0%, #1d140b, #0f0a06 55%, #080604 100%)}
+.jr-scroll{display:flex;flex-direction:column;align-items:center;gap:.25rem;font-family:var(--f-ui);font-size:.64rem;
+  letter-spacing:.32em;text-transform:uppercase;color:var(--gold-2);margin:0 auto clamp(1.2rem,3vw,2.2rem);text-align:center}
+.jr-scroll svg{width:22px;height:22px;animation:jrBob 2.4s ease-in-out infinite}
+@keyframes jrBob{0%,100%{transform:translateY(0);opacity:.65}50%{transform:translateY(5px);opacity:1}}
 
-/* street lamps */
-.lamp{position:absolute;bottom:26%;width:4px;height:120px;z-index:2;
-  background:linear-gradient(#5a4327,#2a1d10)}
-.lamp::before{content:"";position:absolute;top:-14px;left:50%;transform:translateX(-50%);
-  width:16px;height:20px;border-radius:50% 50% 42% 42%;
-  background:radial-gradient(circle at 50% 35%,#fff0c4,#f0ad3c);
-  box-shadow:0 0 26px 10px rgba(255,190,90,.55);animation:lampflk 3.6s ease-in-out infinite}
-.lamp::after{content:"";position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:16px;height:4px;background:#2a1d10;border-radius:2px}
-.lamp-a{left:30%}.lamp-b{left:48%}.lamp-c{left:66%}.lamp-d{left:84%;bottom:28%}
-@keyframes lampflk{0%,100%{opacity:.9}50%{opacity:1}}
+.jr-street{position:relative;max-width:1320px;margin:0 auto;padding:0 var(--gut) 0 var(--gutr)}
+.jr-road,.jr-lit{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.jr-road{z-index:0}
+.jr-lit{z-index:1}
+.jr-road .halo{fill:none;stroke:rgba(255,168,74,.42);stroke-linecap:round}
+.jr-road .edge{fill:none;stroke:#f2c46d;stroke-linecap:round}
+.jr-road .bed{fill:none;stroke:url(#jrCobble);stroke-linecap:round}
+.jr-road .shade{fill:none;stroke:rgba(255,214,150,.07);stroke-linecap:round}
+.jr-lit .lit{fill:none;stroke:rgba(255,200,120,.30);stroke-linecap:round;mix-blend-mode:screen}
+.jr-lit .walker{fill:#ffe2a6;filter:drop-shadow(0 0 6px #ffc46b) drop-shadow(0 0 16px rgba(255,170,70,.9))}
 
-/* bench on the right */
-.bench{position:absolute;right:3%;bottom:14%;width:120px;height:46px;z-index:2;opacity:.55}
-.bench::before{content:"";position:absolute;bottom:0;left:0;right:0;height:8px;background:#3a2714;border-radius:3px;
-  box-shadow:0 10px 0 -2px #2a1d10, -4px 0 0 #2a1d10, 100px 10px 0 -2px #2a1d10}
-.bench::after{content:"";position:absolute;bottom:14px;left:4px;width:112px;height:22px;
-  background:repeating-linear-gradient(90deg,#3a2714 0 14px, transparent 14px 20px);border-radius:3px}
+/* street lamps placed along the road by js/journey.js */
+.jr-lamp{position:absolute;z-index:1;width:3px;height:58px;transform:translate(-50%,-100%);pointer-events:none;
+  background:linear-gradient(#2a1d10,#16100a);border-radius:2px}
+.jr-lamp::before{content:"";position:absolute;left:50%;top:-16px;width:13px;height:17px;transform:translateX(-50%);
+  border-radius:4px 4px 6px 6px;background:radial-gradient(circle at 50% 55%,#fff3cf,#ffc35a 45%,#c0761f 80%);
+  box-shadow:0 0 18px 6px rgba(255,186,90,.55),0 0 60px 18px rgba(255,160,60,.22);animation:jrFlicker 3.8s ease-in-out infinite}
+.jr-lamp::after{content:"";position:absolute;left:50%;bottom:-2px;width:14px;height:4px;transform:translateX(-50%);background:#1a120a;border-radius:2px}
+.jr-lamp:nth-of-type(2n)::before{animation-delay:-1.6s}
+.jr-lamp:nth-of-type(3n)::before{animation-delay:-2.7s}
+@keyframes jrFlicker{0%,100%{opacity:.92}45%{opacity:1}55%{opacity:.82}}
 
-.js-inner{position:relative;z-index:4;display:flex;align-items:flex-end;gap:clamp(1rem,2vw,2rem)}
-.js-intro{flex:0 0 auto;align-self:center;padding-bottom:2.4rem}
-.js-intro h2{font-family:var(--f-disp);font-size:clamp(1.6rem,3.2vw,2.6rem);color:#f3e2b4;line-height:1.02;letter-spacing:.06em}
-.js-intro h2 span{color:var(--gold-hi)}
-.js-intro .js-sub{font-family:var(--f-serif);font-style:italic;font-size:1.5rem;color:var(--gold-2);margin-top:1rem}
-.js-intro .js-note{font-family:var(--f-serif);font-style:italic;font-size:1.1rem;color:var(--cream-dim)}
+/* the grid: header + ten stops, alternating sides, staggered half a stop */
+.jr-grid{position:relative;z-index:2;list-style:none;margin:0;padding:0;display:grid;
+  grid-template-columns:minmax(0,1fr) clamp(104px,11vw,160px) minmax(0,1fr);
+  grid-auto-rows:clamp(150px,13vw,186px)}
+.jr-head{grid-column:1;grid-row:1;align-self:start;justify-self:start;max-width:400px;
+  padding:clamp(1rem,1.8vw,1.5rem) clamp(1.1rem,2vw,1.7rem);border-radius:14px;
+  background:linear-gradient(160deg,rgba(44,31,17,.92),rgba(18,12,7,.92));border:1px solid rgba(242,196,109,.38);
+  box-shadow:inset 0 0 0 4px rgba(14,9,5,.9),inset 0 0 0 5px rgba(242,196,109,.22),0 0 44px -14px rgba(255,170,80,.45),0 30px 50px -26px #000}
+.jr-head .eyebrow{font-family:var(--f-ui);font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-2)}
+.jr-head h2{font-family:var(--f-script);font-weight:400;font-size:clamp(2.9rem,5vw,4.4rem);line-height:.95;color:var(--gold-hi);
+  text-shadow:0 0 22px rgba(255,190,100,.35);margin:.2rem 0 .3rem}
+.jr-head p{font-family:var(--f-serif);font-size:clamp(1rem,1.25vw,1.12rem);line-height:1.45;color:#eadcc0}
 
-.milestones{flex:1 1 0;min-width:0;display:flex;align-items:flex-end;justify-content:space-between;gap:clamp(.4rem,.9vw,1rem)}
-.mstone{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;position:relative;
-  transition:transform .5s cubic-bezier(.2,.7,.2,1)}
-.mstone:hover{transform:translateY(-10px)}
+.jr-stop{grid-row:var(--r) / span 2;align-self:center;position:relative;min-width:0}
+.jr-stop.r{grid-column:3}
+.jr-stop.l{grid-column:1}
+.jr-card{display:flex;align-items:center;gap:clamp(.7rem,1.3vw,1.2rem);color:inherit;text-decoration:none;cursor:pointer;
+  border-radius:16px;outline:none}
+.jr-card:focus-visible{box-shadow:0 0 0 2px var(--gold-2),0 0 0 6px rgba(242,196,109,.2)}
 
-/* arched photo on the wall */
-.mphoto{width:98%;max-width:160px;padding:7px;border-radius:90px 90px 5px 5px;margin-bottom:-30px;
-  background:linear-gradient(145deg,#d8bd82,#7c5a22);
-  box-shadow:0 26px 50px -22px rgba(0,0,0,.9),0 0 34px -12px rgba(255,180,90,.45)}
-.mphoto img{display:block;width:100%;height:clamp(170px,21vh,230px);object-fit:cover;
-  border-radius:84px 84px 3px 3px;border:1px solid #140e07;filter:sepia(.3) grayscale(.4) contrast(1.06) brightness(.95)}
-.mstone:hover .mphoto{box-shadow:0 34px 60px -20px rgba(0,0,0,.95),0 0 40px -8px rgba(255,190,90,.6)}
+/* the stone signboard */
+.jr-sign{position:relative;flex:0 0 44%;min-width:0;text-align:center;
+  padding:clamp(1rem,1.7vw,1.45rem) clamp(.7rem,1.2vw,1.1rem) clamp(1rem,1.5vw,1.3rem);
+  border-radius:50% 50% 10px 10px / 64px 64px 10px 10px;
+  background:radial-gradient(130% 90% at 50% 0%,#3d2c1b,#21170d 58%,#160f08);
+  border:1px solid rgba(242,196,109,.6);
+  box-shadow:inset 0 0 0 4px #160f08,inset 0 0 0 5px rgba(242,196,109,.42),inset 0 18px 30px -18px rgba(255,214,150,.25),
+    0 0 34px -8px rgba(255,170,80,.4),0 26px 40px -20px #000;
+  transition:box-shadow .5s,transform .5s cubic-bezier(.2,.7,.2,1)}
+.jr-sign::after{content:"";position:absolute;left:-5%;right:-5%;bottom:-13px;height:14px;border-radius:3px;
+  background:linear-gradient(#57442e,#2a1f14);box-shadow:inset 0 1px 0 rgba(242,196,109,.4),0 8px 16px -6px #000}
+.jr-sign .n{display:block;font-family:var(--f-disp);font-size:clamp(1.5rem,2.5vw,2.2rem);line-height:1;color:var(--gold-hi);
+  text-shadow:0 0 14px rgba(255,190,100,.5)}
+.jr-sign h3{font-family:var(--f-disp);font-weight:400;font-size:clamp(.98rem,1.4vw,1.26rem);line-height:1.15;color:#f7e9c8;margin:.35rem 0 .4rem}
+.jr-sign p{font-family:var(--f-serif);font-size:clamp(.8rem,.98vw,.93rem);line-height:1.38;color:#dccba8}
 
-/* tombstone / stone marker */
-.stone{position:relative;z-index:3;width:100%;max-width:166px;
-  background:linear-gradient(170deg,#e9d6ab 0%, #d0b683 44%, #ab9060 100%);
-  border-radius:50% 50% 10px 10px / 36% 36% 6px 6px;padding:1.2rem .9rem;text-align:center;
-  box-shadow:0 30px 50px -24px rgba(0,0,0,.9), 0 -2px 0 rgba(255,245,220,.55) inset, 0 0 42px -10px rgba(255,180,90,.5);
-  display:flex;flex-direction:column;align-items:center;gap:.14rem}
-.stone::after{content:"";position:absolute;left:50%;bottom:-16px;transform:translateX(-50%);
-  width:130%;height:40px;background:radial-gradient(50% 100% at 50% 0,rgba(255,180,80,.55),transparent 70%);filter:blur(3px);z-index:-1}
-.stone .snum{font-family:var(--f-disp);font-size:clamp(1.4rem,2.2vw,1.9rem);color:#4a3517;line-height:1}
-.stone .sdeva{font-family:var(--f-deva);font-size:clamp(.9rem,1.4vw,1.1rem);color:#5a4119;margin-top:.2rem}
-.stone .sen{font-family:var(--f-disp);font-size:clamp(.6rem,.92vw,.76rem);letter-spacing:.06em;color:#6b4f23;text-transform:uppercase;line-height:1.25}
+/* the framed photograph */
+.jr-photo{position:relative;flex:1 1 auto;min-width:0;margin:0;padding:clamp(5px,.6vw,8px);border-radius:4px;
+  background:linear-gradient(145deg,#9a7741,#4c3519 38%,#86622f 66%,#3a2812);
+  box-shadow:0 0 0 1px rgba(242,196,109,.55),0 0 42px -12px rgba(255,170,80,.4),0 28px 46px -20px #000;
+  transition:transform .5s cubic-bezier(.2,.7,.2,1),box-shadow .5s}
+.jr-photo img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;object-position:50% 0;background:#0c0905;
+  border:1px solid rgba(0,0,0,.65);filter:sepia(.1) contrast(1.02)}
+.jr-photo .jr-read{position:absolute;right:clamp(10px,1vw,14px);bottom:clamp(10px,1vw,14px);display:inline-flex;align-items:center;gap:.4rem;
+  padding:.38rem .75rem;border-radius:30px;font-family:var(--f-ui);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
+  color:#1a1209;background:linear-gradient(120deg,var(--gold-2),var(--gold-hi));box-shadow:0 6px 16px -6px #000;
+  opacity:.0;transform:translateY(6px);transition:.4s}
+.jr-photo .jr-read svg{width:12px;height:12px}
+.jr-card:hover .jr-photo,.jr-card:focus-visible .jr-photo{transform:translateY(-6px);
+  box-shadow:0 0 0 1px rgba(242,196,109,.8),0 0 60px -8px rgba(255,180,90,.6),0 34px 54px -20px #000}
+.jr-card:hover .jr-sign,.jr-card:focus-visible .jr-sign{transform:translateY(-3px);
+  box-shadow:inset 0 0 0 4px #160f08,inset 0 0 0 5px rgba(242,196,109,.7),inset 0 18px 30px -18px rgba(255,214,150,.35),
+    0 0 50px -6px rgba(255,180,90,.6),0 26px 40px -20px #000}
+.jr-card:hover .jr-read,.jr-card:focus-visible .jr-read{opacity:1;transform:none}
+@media(hover:none){.jr-photo .jr-read{opacity:1;transform:none}}
 
-/* potted bougainvillea at each stone base */
-.plant{position:absolute;bottom:-6px;left:-6px;width:34px;height:40px;z-index:4}
-.plant::before{content:"";position:absolute;bottom:0;left:4px;width:26px;height:16px;
-  background:linear-gradient(#8a5a2c,#5c3a18);border-radius:3px 3px 5px 5px;clip-path:polygon(10% 0,90% 0,78% 100%,22% 100%)}
-.plant::after{content:"";position:absolute;bottom:12px;left:0;width:34px;height:28px;border-radius:50%;
-  background:
-    radial-gradient(6px 6px at 20% 30%, #c0447e, transparent 60%),
-    radial-gradient(5px 5px at 60% 20%, #d4679a, transparent 60%),
-    radial-gradient(5px 5px at 80% 45%, #b83a74, transparent 60%),
-    radial-gradient(7px 7px at 40% 55%, #2f5a2a, transparent 60%),
-    radial-gradient(7px 7px at 70% 70%, #294e24, transparent 60%),
-    radial-gradient(8px 8px at 30% 75%, #335f2d, transparent 60%)}
+/* bougainvillea at the foot of each stop */
+.jr-bloom{position:absolute;z-index:3;width:clamp(70px,7vw,104px);height:auto;pointer-events:none;
+  filter:drop-shadow(0 6px 8px rgba(0,0,0,.6))}
+.jr-stop .jr-bloom{left:-4%;bottom:-18px}
+.jr-stop.r:nth-of-type(4n+1) .jr-bloom,.jr-stop.l:nth-of-type(4n) .jr-bloom{left:auto;right:-3%;transform:scaleX(-1)}
 
-@media(max-width:900px){
-  .js-inner{flex-direction:column;align-items:stretch;gap:2rem}
-  .js-intro{align-self:flex-start;padding-bottom:0}
-  .milestones{overflow-x:auto;justify-content:flex-start;scrollbar-width:none;padding-bottom:.5rem}
-  .milestones::-webkit-scrollbar{display:none}
-  .mstone{flex:0 0 auto;width:150px}
-  .lamp,.bench{display:none}
+/* walking in: stops rise and light as they enter */
+.jr.anim .jr-stop{opacity:0;transform:translateY(34px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.2,1)}
+.jr.anim .jr-stop.in{opacity:1;transform:none}
+
+@media(max-width:860px){
+  .jr-street{padding-right:var(--gutr)}
+  .jr-grid{grid-template-columns:minmax(0,1fr);grid-auto-rows:auto;row-gap:clamp(2.4rem,7vw,3.4rem);padding-left:48px}
+  .jr-head{grid-column:1;grid-row:auto;max-width:none;justify-self:stretch}
+  .jr-stop,.jr-stop.r,.jr-stop.l{grid-column:1;grid-row:auto}
+  .jr-card{flex-direction:column;align-items:stretch;gap:0}
+  .jr-photo{order:-1}
+  .jr-sign{flex:none;margin:-22px 7% 0;border-radius:44% 44% 10px 10px / 34px 34px 10px 10px;z-index:2}
+  .jr-sign p{font-size:.95rem}
+  .jr-stop .jr-bloom,.jr-stop.r:nth-of-type(4n+1) .jr-bloom,.jr-stop.l:nth-of-type(4n) .jr-bloom{left:auto;right:-6px;bottom:-14px;transform:none;width:76px}
+  .jr-lamp{height:40px}
 }
 
-/* clickable milestone + gallery modal */
-.mstone.has-gallery{cursor:pointer}
-.view-badge{position:absolute;top:-6px;right:14%;z-index:6;width:30px;height:30px;border-radius:50%;
-  display:grid;place-items:center;color:#0d0a06;background:linear-gradient(120deg,var(--gold-2),var(--gold-hi));
-  box-shadow:0 6px 18px -6px rgba(0,0,0,.8),0 0 20px -4px rgba(201,162,75,.7);
-  opacity:0;transform:scale(.6);transition:.4s}
-.view-badge svg{width:15px;height:15px}
-.mstone.has-gallery:hover .view-badge,.mstone.has-gallery:focus-visible .view-badge{opacity:1;transform:scale(1)}
-.mstone.has-gallery:focus-visible{outline:2px solid var(--gold-2);outline-offset:4px;border-radius:8px}
+/* the garden street photograph stays put behind the stories as you scroll past them */
+#journey.jr{overflow:hidden;overflow:clip}
+.jr-bg{position:sticky;top:0;z-index:0;height:100vh;height:100svh;margin-bottom:-100vh;margin-bottom:-100svh;pointer-events:none;
+  background:url(../assets/journey-bg-sm.jpg) 50% 50%/cover no-repeat}
+.jr-bg::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(8,5,3,.82),rgba(8,5,3,.62) 22%,rgba(8,5,3,.62) 78%,rgba(8,5,3,.85))}
+.jr-scroll,.jr-street{position:relative;z-index:2}
+/* soft fades into the dark sections above and below */
+#journey.jr::before,#journey.jr::after{content:"";position:absolute;left:0;right:0;z-index:1;height:clamp(70px,9vw,130px);pointer-events:none}
+#journey.jr::before{top:0;background:linear-gradient(#0b0806,rgba(11,8,6,0))}
+#journey.jr::after{bottom:0;background:linear-gradient(rgba(5,5,5,0),#050505)}
+.jr-sign-bg{display:none}
+
+/* ---------- desktop: stories set out along the street, alternating sides ----------
+   The stops sit in a 1000 x 835 unit layout (1 unit = 0.1cqw), so cards, type
+   and spacing all scale with the screen width over the photograph. */
+@media(min-width:861px){
+  #journey.jr{padding:0 0 clamp(30px,4vw,70px);background:#0b0806}
+  .jr-bg{background-image:url(../assets/journey-bg.jpg)}
+  .jr-bg::after{background:
+    radial-gradient(130% 95% at 50% 52%,transparent 50%,rgba(8,5,3,.55) 100%),
+    linear-gradient(180deg,rgba(8,5,3,.45),rgba(8,5,3,.12) 16%,rgba(8,5,3,.12) 84%,rgba(8,5,3,.5))}
+  .jr-scroll{width:max-content;margin:0 auto -2.6rem;padding:.55rem 2.6rem .85rem;
+    background:linear-gradient(#0c0806,#1c130b);border:1px solid rgba(242,196,109,.32);border-top:0;
+    border-radius:0 0 46px 46px;box-shadow:0 12px 30px -12px #000}
+  .jr-street{container-type:inline-size;max-width:1700px;margin:0 auto;padding:0;aspect-ratio:1000/835}
+  .jr-road,.jr-lit,.jr-lamp{display:none}
+
+  .jr-grid{position:absolute;inset:0;display:block}
+  .jr-head{position:absolute;left:3.4cqw;top:3.4cqw;width:15.8cqw;max-width:none;z-index:4;
+    padding:1.5cqw 1.6cqw 1.7cqw;border-radius:.9cqw}
+  .jr-head .eyebrow{font-size:.68cqw}
+  .jr-head h2{font-size:4.3cqw;margin:.3cqw 0 .6cqw}
+  .jr-head p{font-size:1.2cqw;line-height:1.45}
+
+  .jr-stop,.jr-stop.r,.jr-stop.l{position:absolute;grid-row:auto;grid-column:auto;align-self:auto;
+    left:calc(var(--x) * .1cqw);top:calc(var(--y) * .1cqw);width:31cqw;height:15cqw}
+  .jr-card{position:absolute;inset:0;display:flex;align-items:flex-end;gap:1cqw;border-radius:1cqw}
+
+  /* ornate shouldered-arch signboard */
+  .jr-sign{flex:0 0 12.6cqw;height:13.4cqw;isolation:isolate;display:flex;flex-direction:column;align-items:center;
+    padding:2.1cqw 1.05cqw 1cqw;margin-bottom:.4cqw;background:none;border:0;border-radius:0;box-shadow:none;
+    filter:drop-shadow(0 0 1.5cqw rgba(255,170,80,.45)) drop-shadow(0 1cqw 1.2cqw rgba(0,0,0,.75))}
+  .jr-sign-bg{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:-1}
+  .jr-sign::after{left:-5%;right:-5%;bottom:-1.1cqw;height:1.2cqw;border-radius:.25cqw}
+  .jr-sign .n{font-size:2.4cqw;margin-top:.1cqw}
+  .jr-sign h3{font-size:1.32cqw;margin:.55cqw 0 .45cqw}
+  .jr-sign p{font-size:.88cqw;line-height:1.36}
+  .jr-card:hover .jr-sign,.jr-card:focus-visible .jr-sign{box-shadow:none;transform:translateY(-.3cqw);
+    filter:drop-shadow(0 0 2.2cqw rgba(255,180,90,.7)) drop-shadow(0 1cqw 1.2cqw rgba(0,0,0,.75))}
+
+  /* thick gilded frame */
+  .jr-photo{flex:0 0 17.4cqw;padding:.7cqw;margin-bottom:1.5cqw;border-radius:.3cqw;
+    background:linear-gradient(135deg,#f6d98e,#b07a2c 22%,#f2cf7c 44%,#8a5a1e 66%,#e7bf6c 84%,#9b6b25);
+    box-shadow:inset 0 0 0 .18cqw rgba(60,35,10,.55),0 0 0 .1cqw rgba(255,226,160,.6),
+      0 0 3cqw -.4cqw rgba(255,180,90,.6),0 1.6cqw 2.6cqw -1cqw #000}
+  .jr-photo img{aspect-ratio:16/10;border:.18cqw solid #3a2410}
+  .jr-photo .jr-read{font-size:.6cqw;padding:.4cqw .8cqw}
+
+  .jr-stop .jr-bloom{display:none}
+}
+
+/* story viewer (full story cards) */
+.smodal .gm-page{grid-template-columns:auto minmax(260px,380px);max-width:1100px}
+.sm-frame img{display:block;max-width:100%;max-height:min(80vh,820px);aspect-ratio:4/5;object-fit:contain;
+  border:1px solid var(--brass);border-radius:3px;box-shadow:0 0 70px -16px rgba(201,162,75,.4);background:#fffbf0}
+.sm-frame{touch-action:pan-y}
+.sm-actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.3rem}
+.sm-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1.05rem;border-radius:30px;cursor:pointer;
+  font-family:var(--f-ui);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;transition:.3s;
+  border:1px solid rgba(242,196,109,.5);background:rgba(30,20,10,.7);color:var(--gold-hi)}
+.sm-btn:hover{border-color:var(--gold-2);background:rgba(50,34,16,.9)}
+.sm-btn.gold{color:#1a1209;border-color:transparent;background:linear-gradient(120deg,var(--gold-2),var(--gold-hi))}
+.sm-dots{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:auto;padding-top:1.3rem;border-top:1px solid var(--line)}
+.sm-dot{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:rgba(20,14,7,.7);cursor:pointer;
+  font-family:var(--f-disp);font-size:.8rem;color:var(--muted);transition:.3s;padding:0}
+.sm-dot:hover{color:var(--gold-hi);border-color:var(--gold-2)}
+.sm-dot.on{color:#1a1209;border-color:transparent;background:linear-gradient(120deg,var(--gold-2),var(--gold-hi))}
+@media(max-width:860px){
+  .smodal .gm-page{grid-template-columns:1fr}
+  .sm-frame img{max-height:58vh;margin:0 auto}
+}
 
 .gmodal{position:fixed;inset:0;z-index:120;background:rgba(5,4,2,.97);backdrop-filter:blur(6px);
   display:none;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 22px) var(--gut) 22px}

@@ -85,6 +85,7 @@
       thumbsBox.querySelectorAll('.gm-thumb').forEach(function(t){ t.addEventListener('click',function(){ show(+t.getAttribute('data-i')); }); });
       show(0); modal.classList.add('on'); modal.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; }
     function close(){ modal.classList.remove('on'); modal.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+    window.kkOpenGallery = open; // used by the Journey story viewer (js/journey.js)
     document.querySelectorAll('.mstone.has-gallery').forEach(function(m){
       var key=m.getAttribute('data-gallery');
       m.addEventListener('click', function(){ open(key); });
