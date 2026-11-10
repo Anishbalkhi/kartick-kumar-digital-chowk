@@ -543,7 +543,7 @@ async function init() {
 
   function placement() {
     const vh = window.innerHeight;
-    let p = null, turns = 0, hop = 0, merge = 0;
+    let p = null, prevQ = null, turns = 0, hop = 0, merge = 0;
     for (const st of STOPS) {
       if (st.desktopOnly && mobile()) continue;
       const el = document.querySelector(st.el);
@@ -552,12 +552,13 @@ async function init() {
       const at = typeof st.at === 'function' ? st.at() : st.at;
       const q = { x: r.left + r.width * at[0], y: r.top + r.height * at[1], len: st.len(r),
                   ang: typeof st.ang === 'function' ? st.ang() : st.ang };
-      if (!p) { p = q; continue; }
+      if (!p) { p = q; prevQ = q; continue; }
       let s;
       if (st.follow !== undefined) {
-        // travel along with the page so the sitar holds `follow` (fraction of the viewport) on screen
+        // travel along with the page so the sitar holds `follow` (fraction of the viewport) on screen.
+        // Measured from the previous stop's own spot, so this only starts once the sitar has got there.
         const c = st.follow * vh;
-        s = q.y === p.y ? 1 : clamp01((c - p.y) / (q.y - p.y));
+        s = q.y === prevQ.y ? 1 : clamp01((c - prevQ.y) / (q.y - prevQ.y));
       } else {
         // never mid-flight before you scroll: start no lower than where this element sits at the top of the page
         const fromPx = Math.min(st.from * vh, r.top + window.pageYOffset - 1);
@@ -568,6 +569,7 @@ async function init() {
       p = { x: lerp(p.x, q.x, s), y: lerp(p.y, q.y, s), len: lerp(p.len, q.len, s), ang: lerp(p.ang, q.ang, s) };
       if (st.turn !== false) turns += s;
       if (st.merge) merge = s;
+      prevQ = q;
     }
     if (p) p.y -= hop * vh * 0.06;          // a small lift mid-flight
     return { p, turns, hop, merge };
