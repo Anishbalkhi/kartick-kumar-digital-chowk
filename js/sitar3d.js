@@ -537,7 +537,9 @@ async function init() {
      (fractions of the viewport height); the sitar lifts, turns once and glides over. */
   const mobile = () => window.matchMedia('(max-width: 860px)').matches;
   // standing upright on the street: as tall as fits comfortably on screen
-  const streetLen = r => mobile() ? Math.min(r.width * 0.95, window.innerHeight * 0.52)
+  // phones: a slim sitar walking down the lit road lane at the left edge, clear of the story cards
+  const LANE_PX = 38;
+  const streetLen = r => mobile() ? Math.min(150, window.innerHeight * 0.22)
                                   : Math.min(r.width * 0.34, window.innerHeight * 0.66);
   const portrait = () => window.matchMedia('(max-width: 600px)').matches;
   const STOPS = [
@@ -552,10 +554,10 @@ async function init() {
       len: r => mobile() ? Math.min(r.width * 0.95, r.height * 0.62) : Math.min(r.width * 0.42, r.height * 0.7),
       ang: 37, from: 9, to: 0.1, anchor: true, hop: 0 },   // peel off the stand from the first scroll and glide straight here
     // the story street: land at its top-middle, standing upright (vertical) ...
-    { el: '.jr-street', at: () => mobile() ? [0.5, 0.03] : [0.5, 0.1],
+    { el: '.jr-street', at: r => mobile() ? [LANE_PX / r.width, 0.03] : [0.5, 0.1],
       len: streetLen, ang: 90, from: 0.95, to: 0.3 },
     // ... then walk down the middle of the street, holding mid-screen, to its bottom-middle
-    { el: '.jr-street', at: () => mobile() ? [0.5, 0.97] : [0.5, 0.9],
+    { el: '.jr-street', at: r => mobile() ? [LANE_PX / r.width, 0.97] : [0.5, 0.9],
       len: streetLen, ang: 90, follow: 0.5, turn: false },
     // finally settle exactly onto the sitar in his photograph (About section) and dissolve into it.
     // Fitted on the frets: the model's lowest fret (43.6 cm) lands on the photo's lowest visible fret
@@ -575,7 +577,7 @@ async function init() {
       const el = document.querySelector(st.el);
       if (!el) continue;
       const r = el.getBoundingClientRect();
-      const at = typeof st.at === 'function' ? st.at() : st.at;
+      const at = typeof st.at === 'function' ? st.at(r) : st.at;
       const q = { x: r.left + r.width * at[0], y: r.top + r.height * at[1], len: st.len(r),
                   ang: typeof st.ang === 'function' ? st.ang() : st.ang };
       if (!p) { p = q; prevQ = q; continue; }

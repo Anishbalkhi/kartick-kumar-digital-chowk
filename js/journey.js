@@ -59,7 +59,7 @@
     var pts = [], roadW;
 
     if (mobile) {
-      var x = parseFloat(getComputedStyle(street).paddingLeft) + 20;
+      var x = 38;                                // the road lane the sitar walks down (sitar3d.js LANE_PX)
       roadW = 24;
       pts.push([x, 0]);
       stops.forEach(function (s, i) {

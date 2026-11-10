@@ -272,7 +272,7 @@ section{position:relative}
 
 @media(max-width:860px){
   .jr-street{padding-right:var(--gutr)}
-  .jr-grid{grid-template-columns:minmax(0,1fr);grid-auto-rows:auto;row-gap:clamp(2.4rem,7vw,3.4rem);padding-left:48px}
+  .jr-grid{grid-template-columns:minmax(0,1fr);grid-auto-rows:auto;row-gap:clamp(2.4rem,7vw,3.4rem);padding-left:66px}
   .jr-head{grid-column:1;grid-row:auto;max-width:none;justify-self:stretch}
   .jr-stop,.jr-stop.r,.jr-stop.l{grid-column:1;grid-row:auto}
   .jr-card{flex-direction:column;align-items:stretch;gap:0}
@@ -365,6 +365,20 @@ section{position:relative}
 @media(max-width:860px){
   .smodal .gm-page{grid-template-columns:1fr}
   .sm-frame img{max-height:58vh;margin:0 auto}
+}
+/* phones: the story card uses the full width, with the arrows laid over its edges */
+@media(max-width:600px){
+  .gmodal.smodal{padding:calc(env(safe-area-inset-top,0px) + 64px) 10px 14px}
+  .smodal .gm-page{padding:.8rem;gap:.8rem}
+  .smodal .gm-stage{position:relative;display:block}
+  .smodal .sm-frame img{width:100%;height:auto;max-height:none}
+  .smodal .gm-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:40px;height:40px;
+    background:rgba(10,7,4,.72);backdrop-filter:blur(3px)}
+  .smodal #smPrev{left:6px}
+  .smodal #smNext{right:6px}
+  .smodal .gm-close{top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;width:42px;height:42px}
+  .smodal .gm-title{font-size:1.5rem}
+  .smodal .sm-dot{width:32px;height:32px}
 }
 
 .gmodal{position:fixed;inset:0;z-index:120;background:rgba(5,4,2,.97);backdrop-filter:blur(6px);
