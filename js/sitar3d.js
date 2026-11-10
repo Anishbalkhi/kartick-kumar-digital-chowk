@@ -547,7 +547,7 @@ async function init() {
       len: r => r.width * (portrait() ? 0.42 : 0.32), ang: () => portrait() ? 33 : 27 },
     { el: '.hero', at: () => mobile() ? [0.5, 0.5] : [0.27, 0.5],
       len: r => mobile() ? Math.min(r.width * 0.95, r.height * 0.62) : Math.min(r.width * 0.42, r.height * 0.7),
-      ang: 37, from: 0.85, to: 0.1 },
+      ang: 37, from: 9, to: 0.1, anchor: true, hop: 0 },   // peel off the stand from the first scroll and glide straight here
     // the story street: land at its top-middle, standing upright (vertical) ...
     { el: '.jr-street', at: () => mobile() ? [0.5, 0.03] : [0.5, 0.1],
       len: streetLen, ang: 90, from: 0.95, to: 0.3 },
@@ -587,10 +587,13 @@ async function init() {
         const fromPx = Math.min(st.from * vh, r.top + window.pageYOffset - 1);
         const toPx = Math.min(st.to * vh, fromPx - 0.35 * vh);
         s = ease(clamp01((fromPx - r.top) / (fromPx - toPx)));
-        hop = Math.max(hop, Math.sin(Math.PI * s) * (st.merge ? 0.4 : 1));
+        hop = Math.max(hop, Math.sin(Math.PI * s) * (st.hop !== undefined ? st.hop : st.merge ? 0.4 : 1));
+        // while leaving, keep the starting point on screen instead of letting it scroll away with the page
+        // start from where it rested on screen, so it never rides up under the top bar with the monument
+        if (st.anchor) p = { ...p, y: p.y + window.pageYOffset };
       }
       p = { x: lerp(p.x, q.x, s), y: lerp(p.y, q.y, s), len: lerp(p.len, q.len, s), ang: lerp(p.ang, q.ang, s) };
-      if (st.turn !== false) turns += s;
+      if (st.turn !== false) turns += Math.sin(Math.PI * s) * 0.45;   // a gentle sway in flight, never showing its back
       if (st.merge) merge = s;
       if (lift < 0) lift = s;               // the first flight: off the monument
       prevQ = q;
@@ -670,7 +673,7 @@ async function init() {
         const r = photo.getBoundingClientRect(), vw0 = window.innerWidth, vh0 = window.innerHeight;
         const ins = [r.top, vw0 - r.right, vh0 - r.bottom, r.left].map(v => Math.max(0, v) * clipT);
         cvs.style.clipPath = 'inset(' + ins.map(v => v.toFixed(1) + 'px').join(' ') + ' round ' + (3 * clipT).toFixed(1) + 'px)';
-      } else if (mounted > 0 && lift < 0.12) cvs.style.clipPath = behindRim();
+      } else if (lift < 0.004) cvs.style.clipPath = behindRim();
       else if (cvs.style.clipPath) cvs.style.clipPath = '';
       photoFrame.style.setProperty('--kk-glow', (Math.sin(Math.PI * clamp01((merge - 0.55) / 0.45))).toFixed(3));
     }
@@ -695,7 +698,7 @@ async function init() {
       tilt.rotation.set(upright ? 0 : 0.08, 0, upright ? 0 : lean);
     } else if (!reduce) {
       const calm = (1 - merge) * (1 - 0.75 * mounted);   // steady on its stand, face-on in the photograph
-      spin.rotation.y = (0.2 + Math.sin(s * 0.35) * 0.3 + cx * 0.45) * calm + 0.12 * mounted + turns * Math.PI * 2;
+      spin.rotation.y = (0.2 + Math.sin(s * 0.35) * 0.3 + cx * 0.45) * calm + 0.12 * mounted + turns;
       tilt.rotation.set((0.08 + cy * 0.15) * calm, 0, lean + Math.sin(s * 0.5) * 0.02 * calm);
       holder.position.y += Math.sin(s * 0.9) * 0.012 * k * (1 - mounted);   // no floating bob while mounted
     } else {
