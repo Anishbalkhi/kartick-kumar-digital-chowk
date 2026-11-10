@@ -94,10 +94,10 @@ async function init() {
      main bridge 15.7 cm up, gourd ~26 cm deep, neck 10 x 7 cm, peg box 21 cm, overall ~128 cm,
      19 frets, 7 playing + 13 tarab strings, no upper gourd */
   const D = {
-    GX: 0.932, GY: 0.83, GZ: 1.45,    // gourd profile -> 34 x 32 x 26 cm
+    GX: 1.12, GY: 1.0, GZ: 1.7,       // gourd profile -> 41 x 39 x 31 cm (the artwork's fuller gourd)
     BRIDGE: 15.7, SCALE: 90,          // nut at 105.7
     NECK0: 30.0, NECK1: 127.1,        // neck from gourd joint to top of peg box
-    NW: 10.0, ND: 7.0                 // neck width / depth incl. fingerboard
+    NW: 11.2, ND: 7.6                 // neck width / depth incl. fingerboard (sturdier, as in the artwork)
   };
   D.NUT = D.BRIDGE + D.SCALE;
 
@@ -296,7 +296,7 @@ async function init() {
     ctx.strokeStyle = c.goldLine; ctx.beginPath(); ctx.moveTo(0, nutY + 38); ctx.lineTo(W, nutY + 38); ctx.stroke();
   }
 
-  const RED = '#8a4424';
+  const RED = '#a04a26';
   const sbTex = carved(1024, 1024, '#682a17', true, (x, c) => drawSoundboard(x, c, 1024));
   const gourdTex = carved(1024, 1024, RED, false, () => {});
   const fbTex = carved(128, 2048, '#5f2414', true, (x, c) => drawFingerboard(x, c, 128, 2048));
@@ -317,16 +317,16 @@ async function init() {
     loadTex('assets/sitar-board.jpg', true), loadTex('assets/sitar-board-mat.jpg'),
     loadTex('assets/sitar-neck.jpg', true), loadTex('assets/sitar-neck-mat.jpg')]);
   const photoMat = (map, pack) => map && pack ? new THREE.MeshPhysicalMaterial({
-    map, color: 0xdcdde4, bumpMap: pack, bumpScale: 2.2, roughnessMap: pack, roughness: 1, metalnessMap: pack, metalness: 1,
+    map, emissiveMap: map, emissive: 0x4a3a30, color: 0xf6e4dc, bumpMap: pack, bumpScale: 2.2, roughnessMap: pack, roughness: 1, metalnessMap: pack, metalness: 1,
     clearcoat: 0.55, clearcoatRoughness: 0.16, envMapIntensity: 0.7 }) : null;   // the photo is already lit: tone it down
   const M = {
     board: photoMat(boardMap, boardPack) || lacquer(sbTex),
     gourd: lacquer(gourdTex, { side: THREE.DoubleSide }),
     finger: photoMat(neckMap, neckPack) || lacquer(fbTex),
     neck: lacquer(neckTex, { side: THREE.DoubleSide }),
-    gold: new THREE.MeshStandardMaterial({ color: 0xd9b25c, metalness: 1, roughness: 0.32, envMapIntensity: 1.5 }),
-    peg: new THREE.MeshPhysicalMaterial({ color: 0x7a3a1c, roughness: 0.34, clearcoat: 0.9, clearcoatRoughness: 0.12, envMapIntensity: 1 }),
-    fret: new THREE.MeshStandardMaterial({ color: 0xf0e8d4, metalness: 1, roughness: 0.18, envMapIntensity: 1.9 }),
+    gold: new THREE.MeshStandardMaterial({ color: 0xf0c870, metalness: 1, roughness: 0.32, envMapIntensity: 1.5 }),
+    peg: new THREE.MeshPhysicalMaterial({ color: 0xa3281a, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.1 }),
+    fret: new THREE.MeshStandardMaterial({ color: 0xeac47a, metalness: 1, roughness: 0.22, envMapIntensity: 1.6 }),
     bone: new THREE.MeshPhysicalMaterial({ color: 0xf2ead8, roughness: 0.42, clearcoat: 0.4, clearcoatRoughness: 0.35, envMapIntensity: 0.8 }),
     steel: new THREE.MeshStandardMaterial({ color: 0xebe5d8, metalness: 1, roughness: 0.2, envMapIntensity: 1.4 }),
     bronze: new THREE.MeshStandardMaterial({ color: 0xcf8f4c, metalness: 1, roughness: 0.25, envMapIntensity: 1.4 })
@@ -355,10 +355,11 @@ async function init() {
   /* main gourd: deep carved bowl + flat soundboard */
   const { BRIDGE, NUT, SCALE, NECK0, NECK1, NW, ND } = D;
   const HW = NW / 2, BACK = ND - 0.6;           // half width; depth of the rounded back
-  const gourdGroup = new THREE.Group(); gourdGroup.scale.set(D.GX, D.GY, D.GZ); inst.add(gourdGroup);
+  const GDROP = 39 * (D.GY - 0.83);            // grow the gourd downward: neck joint stays where it was
+  const gourdGroup = new THREE.Group(); gourdGroup.scale.set(D.GX, D.GY, D.GZ); gourdGroup.position.y = -GDROP; inst.add(gourdGroup);
   add(new THREE.LatheGeometry(prof, 72, Math.PI / 2, Math.PI), M.gourd, null, null, gourdGroup);
   {
-    const front = new THREE.Group(); front.scale.set(D.GX, D.GY, 1); inst.add(front);
+    const front = new THREE.Group(); front.scale.set(D.GX, D.GY, 1); front.position.y = -GDROP; inst.add(front);
     const shape = new THREE.Shape();
     prof.forEach((p, i) => i ? shape.lineTo(p.x, p.y) : shape.moveTo(p.x, p.y));
     for (let i = prof.length - 1; i >= 0; i--) shape.lineTo(-prof[i].x, prof[i].y);
@@ -380,6 +381,17 @@ async function init() {
     back.scale.z = BACK / HW;
     add(new THREE.BoxGeometry(NW, len, 0.6), [M.gold, M.gold, M.gold, M.gold, M.finger, M.finger], [0, cy, 0.3]);
     add(new THREE.BoxGeometry(NW + 0.2, 1.2, ND + 0.2), M.gold, [0, NECK1 + 0.6, 0.6 - ND / 2]); // gold cap on the peg box
+    // round scroll head, as on the artwork's sitar
+    const HR = 6.2, HY = NECK1 + 1.2 + HR * 0.82, HZ = 0.6 - ND / 2;
+    add(new THREE.CylinderGeometry(HR, HR, ND, 48), M.neck, [0, HY, HZ], [Math.PI / 2, 0, 0]);
+    add(new THREE.CircleGeometry(HR - 0.9, 48), M.finger, [0, HY, HZ + ND / 2 + 0.02]);
+    add(new THREE.TorusGeometry(HR - 0.45, 0.5, 12, 64), M.gold, [0, HY, HZ + ND / 2 + 0.05]);
+    add(new THREE.TorusGeometry(HR * 0.42, 0.32, 10, 48), M.gold, [0, HY, HZ + ND / 2 + 0.05]);
+    add(new THREE.SphereGeometry(1.1, 20, 14), M.gold, [0, HY, HZ + ND / 2 + 0.3]);
+    for (let i = 0; i < 8; i++) {
+      const a = i / 8 * Math.PI * 2;
+      add(new THREE.SphereGeometry(0.45, 12, 10), M.gold, [Math.cos(a) * HR * 0.7, HY + Math.sin(a) * HR * 0.7, HZ + ND / 2 + 0.15]);
+    }
   }
 
   /* nut (meru), twin bone bridges and the gold tailpiece anchor, where they sit on his sitar */
@@ -387,7 +399,7 @@ async function init() {
   add(new THREE.BoxGeometry(8.4, 3.8, 2.5), M.bone, [0, BRIDGE, 1.3]);   // main bridge (badi goraj)
   const TB = BRIDGE + 3.7;
   add(new THREE.BoxGeometry(5.6, 3.2, 1.7), M.bone, [0, TB, 0.9]);       // tarab bridge (chhoti goraj)
-  const TAIL = 8.6;                                                       // top of the gold tailpiece
+  const TAIL = 8.6 - GDROP * 0.6;                                                       // top of the gold tailpiece
   add(new THREE.BoxGeometry(2.6, 0.8, 0.7), M.gold, [0, TAIL, 0.4]);
 
   /* 19 arched frets at the positions measured from the photograph */
@@ -397,23 +409,11 @@ async function init() {
     add(new THREE.TubeGeometry(curve, 24, 0.19, 8, false), M.fret);
   });
 
-  /* dark ball-headed pegs (khunti), lightly fluted; ~9 cm, tarab pegs ~4-5 cm */
+  /* pegs (khunti): glossy red balls on short turned stems, as on the artwork's sitar */
   const pegGeo = new THREE.LatheGeometry([
-    [0, 0], [0.4, 0], [0.42, 3.4], [0.62, 3.6], [0.62, 4.0], [0.5, 4.3], [0.95, 4.6],
-    [1.45, 5.1], [1.7, 5.9], [1.72, 6.6], [1.5, 7.4], [1.0, 7.95], [0.45, 8.2], [0.3, 8.4], [0.36, 8.6], [0, 8.75]
-  ].map(p => new THREE.Vector2(p[0], p[1])), 48);
-  {
-    // melon-fluted heads, like the pegs on his sitar
-    const p = pegGeo.attributes.position;
-    for (let i = 0; i < p.count; i++) {
-      const y = p.getY(i);
-      if (y > 4.6 && y < 8.2) {
-        const x = p.getX(i), z = p.getZ(i), f = 1 + 0.1 * Math.cos(8 * Math.atan2(x, z)) * Math.sin(Math.PI * (y - 4.6) / 3.6);
-        p.setX(i, x * f); p.setZ(i, z * f);
-      }
-    }
-    pegGeo.computeVertexNormals();
-  }
+    [0, 0], [0.42, 0], [0.42, 2.6], [0.7, 2.8], [0.7, 3.2], [0.5, 3.45], [0.55, 3.75],
+    [1.15, 4.05], [1.62, 4.75], [1.78, 5.6], [1.62, 6.45], [1.15, 7.12], [0.55, 7.45], [0, 7.55]
+  ].map(p => new THREE.Vector2(p[0], p[1])), 40);
   const MIDZ = 0.6 - ND / 2;                     // halfway through the neck's depth
   const peg = (side, y, s, z, x) => {
     const m = add(pegGeo, M.peg,
@@ -462,7 +462,7 @@ async function init() {
 
   /* ---------- assemble: holder (screen place + size) -> tilt (lean) -> spin (around its length) ---------- */
   inst.scale.setScalar(0.01);
-  inst.position.y = -0.64;
+  inst.position.y = -0.6;
   const MODEL_LEN = 1.3;                         // world length of the sitar at holder scale 1
   const spin = new THREE.Group(); spin.add(inst);
   const tilt = new THREE.Group(); tilt.add(spin);
@@ -513,7 +513,7 @@ async function init() {
   const STOPS = [
     // phones crop the image to its middle, so the sitar sits a little smaller and further left there
     // placed as in the original artwork: gourd resting on the rim at ~(45%, 34%), head ending near (73%, 7%)
-    { el: '.chowk-stage', at: () => mobile() ? [0.555, 0.245] : [0.573, 0.231],
+    { el: '.chowk-stage', at: () => mobile() ? [0.555, 0.23] : [0.573, 0.214],
       len: r => r.width * (mobile() ? 0.32 : 0.36), ang: 29 },
     { el: '.hero', at: () => mobile() ? [0.5, 0.5] : [0.27, 0.5],
       len: r => mobile() ? Math.min(r.width * 0.95, r.height * 0.62) : Math.min(r.width * 0.42, r.height * 0.7),
