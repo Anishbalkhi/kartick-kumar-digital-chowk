@@ -406,7 +406,8 @@ section{position:relative}
 .about-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:clamp(2rem,5vw,4.5rem);align-items:center}
 @media(max-width:820px){.about-grid{grid-template-columns:1fr;gap:2.2rem}}
 .about-photo{position:relative;padding:12px;background:linear-gradient(145deg,#d9b968,#6f5020);border-radius:4px;
-  box-shadow:0 40px 80px -30px #000,0 0 60px -20px rgba(201,162,75,.4)}
+  box-shadow:0 40px 80px -30px #000,0 0 60px -20px rgba(201,162,75,.4),
+    0 0 calc(var(--kk-glow,0) * 90px) calc(var(--kk-glow,0) * 12px) rgba(255,190,90,calc(var(--kk-glow,0) * .55))}
 .about-photo img{filter:grayscale(.15) contrast(1.04);border:1px solid #000}
 .about-photo .cap{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);white-space:nowrap;
   background:#0a0a0b;border:1px solid var(--line);padding:.4rem 1.1rem;border-radius:30px;

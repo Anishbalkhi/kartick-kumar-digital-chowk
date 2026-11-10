@@ -512,6 +512,9 @@ async function init() {
      Moving into a stop happens while the element's top scrolls from `from` to `to`
      (fractions of the viewport height); the sitar lifts, turns once and glides over. */
   const mobile = () => window.matchMedia('(max-width: 860px)').matches;
+  // standing upright on the street: as tall as fits comfortably on screen
+  const streetLen = r => mobile() ? Math.min(r.width * 0.95, window.innerHeight * 0.52)
+                                  : Math.min(r.width * 0.34, window.innerHeight * 0.66);
   const portrait = () => window.matchMedia('(max-width: 600px)').matches;
   const STOPS = [
     // phones crop the image to its middle, so the sitar sits a little smaller and further left there
@@ -522,14 +525,16 @@ async function init() {
     { el: '.hero', at: () => mobile() ? [0.5, 0.5] : [0.27, 0.5],
       len: r => mobile() ? Math.min(r.width * 0.95, r.height * 0.62) : Math.min(r.width * 0.42, r.height * 0.7),
       ang: 37, from: 0.85, to: 0.1 },
-    // the story street: land at its top-middle, lying flat (horizontal) ...
-    { el: '.jr-street', at: () => mobile() ? [0.5, 0.012] : [0.5, 0.045],
-      len: r => mobile() ? r.width * 0.78 : r.width * 0.3, ang: 0, from: 0.95, to: 0.3 },
+    // the story street: land at its top-middle, standing upright (vertical) ...
+    { el: '.jr-street', at: () => mobile() ? [0.5, 0.03] : [0.5, 0.1],
+      len: streetLen, ang: 90, from: 0.95, to: 0.3 },
     // ... then walk down the middle of the street, holding mid-screen, to its bottom-middle
-    { el: '.jr-street', at: () => mobile() ? [0.5, 0.992] : [0.5, 0.965],
-      len: r => mobile() ? r.width * 0.78 : r.width * 0.3, ang: 0, follow: 0.42, turn: false },
-    // finally settle onto the sitar in his photograph (About section) and dissolve into it
-    { el: '.about-photo img', at: [0.806, 0.47], len: r => r.width * 1.25, ang: 63, from: 0.95, to: 0.3,
+    { el: '.jr-street', at: () => mobile() ? [0.5, 0.97] : [0.5, 0.9],
+      len: streetLen, ang: 90, follow: 0.5, turn: false },
+    // finally settle exactly onto the sitar in his photograph (About section) and dissolve into it.
+    // Fitted on the frets: the model's lowest fret (43.6 cm) lands on the photo's lowest visible fret
+    // at (62.3%, 77.9%) and its top fret (99.2 cm) on the photo's top fret at (93.2%, 26.6%).
+    { el: '.about-photo img', at: [0.675, 0.627], len: r => r.width * 1.58, ang: 62.8, from: 1.05, to: 0.22,
       turn: false, merge: true }
   ];
   const ease = t => t * t * (3 - 2 * t);
@@ -570,6 +575,7 @@ async function init() {
 
   /* ---------- mount: one fixed, page-wide layer above the sections ---------- */
   let raf = 0, shown = false, still = pose !== null || reduce, wasOff = false, lastFade = -1;
+  const photo = document.querySelector('.about-photo img'), photoFrame = photo && photo.closest('.about-photo');
   let last = 0, frames = 0, slowMs = 0, tier = 0;
   const cvs = renderer.domElement;
   cvs.className = 'kk-sitar-layer';
@@ -606,7 +612,17 @@ async function init() {
     const s = t / 1000;
     cx += (mx - cx) * 0.05; cy += (my - cy) * 0.05;
     const { p, turns, merge } = placement();
-    const fade = noFade ? 0 : clamp01((merge - 0.55) / 0.4);
+    // the hand-off into the photograph: tighten a clip to the photo frame, then crossfade with a soft glow
+    const fade = noFade ? 0 : ease(clamp01((merge - 0.62) / 0.36));
+    const clipT = ease(clamp01((merge - 0.35) / 0.45));
+    if (photo) {
+      if (clipT > 0) {
+        const r = photo.getBoundingClientRect(), vw0 = window.innerWidth, vh0 = window.innerHeight;
+        const ins = [r.top, vw0 - r.right, vh0 - r.bottom, r.left].map(v => Math.max(0, v) * clipT);
+        cvs.style.clipPath = 'inset(' + ins.map(v => v.toFixed(1) + 'px').join(' ') + ' round ' + (3 * clipT).toFixed(1) + 'px)';
+      } else if (cvs.style.clipPath) cvs.style.clipPath = '';
+      photoFrame.style.setProperty('--kk-glow', (Math.sin(Math.PI * clamp01((merge - 0.55) / 0.45))).toFixed(3));
+    }
     if (fade !== lastFade) { cvs.style.opacity = shown ? String(1 - fade) : ''; lastFade = fade; }
     if (fade >= 1) { if (!wasOff) { renderer.clear(); wasOff = true; } return; }
     if (!p) return;
