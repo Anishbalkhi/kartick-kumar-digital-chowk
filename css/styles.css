@@ -104,6 +104,14 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   50%{transform:translateY(-24px) rotateZ(1.5deg) rotateY(6deg)}
   100%{transform:translateY(0) rotateZ(-1.5deg) rotateY(-6deg)}}
 @media(max-width:860px){.hero-sitar-wrap{left:50%;height:46vh}}
+/* real-time 3D sitar (js/sitar3d.js); the <img> above is the fallback */
+.hero-sitar-wrap.is-3d{height:min(82vh,760px);aspect-ratio:.74}
+.hero-sitar-wrap.is-3d::before{content:"";position:absolute;inset:8% 4%;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(255,170,90,.16),rgba(255,150,70,.05) 60%,transparent);pointer-events:none}
+.hero-sitar-wrap.is-3d .hero-sitar-float{display:none}
+.hero-sitar-3d{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .9s ease}
+.hero-sitar-3d.on{opacity:1}
+@media(max-width:860px){.hero-sitar-wrap.is-3d{height:58vh}}
 
 /* ======================= SECTION SHELL ======================= */
 section{position:relative}
