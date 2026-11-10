@@ -11,7 +11,8 @@
    cool dusk-sky rim from behind-left, warm ground bounce.
    If WebGL is missing or software-only, the static <img> stays.
    Testing: ?force3d skips the GPU check; &pose=<yaw radians> holds a pose
-   (and exposes window.__sitarDims, measured sizes in cm); &upright removes the lean.
+   (and exposes window.__sitarDims, measured sizes in cm); &upright removes the lean;
+   &nofade keeps the sitar visible where it merges into the About photo.
    ===================================================================== */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
 
@@ -24,6 +25,7 @@ async function init() {
   const poseMatch = location.search.match(/[?&]pose=(-?[\d.]+)/);
   const pose = poseMatch ? parseFloat(poseMatch[1]) : null;
   const upright = /[?&]upright\b/.test(location.search);
+  const noFade = /[?&]nofade\b/.test(location.search);   // testing: keep the sitar visible over the photo
 
   // Software-rendered WebGL (no GPU) would crawl at a frame or two per second,
   // so those browsers keep the static image. Probe quietly first so three.js
@@ -520,7 +522,15 @@ async function init() {
     { el: '.hero', at: () => mobile() ? [0.5, 0.5] : [0.27, 0.5],
       len: r => mobile() ? Math.min(r.width * 0.95, r.height * 0.62) : Math.min(r.width * 0.42, r.height * 0.7),
       ang: 37, from: 0.85, to: 0.1 },
-    { el: '.jr-street', at: [0.37, 0.062], len: r => r.width * 0.27, ang: 11, from: 0.95, to: 0.3, desktopOnly: true }
+    // the story street: land at its top-middle ...
+    { el: '.jr-street', at: () => mobile() ? [0.5, 0.012] : [0.5, 0.045],
+      len: r => mobile() ? r.width * 0.78 : r.width * 0.3, ang: () => mobile() ? 24 : 18, from: 0.95, to: 0.3 },
+    // ... then walk down the middle of the street, holding mid-screen, to its bottom-middle
+    { el: '.jr-street', at: () => mobile() ? [0.5, 0.992] : [0.5, 0.965],
+      len: r => mobile() ? r.width * 0.78 : r.width * 0.3, ang: () => mobile() ? 24 : 18, follow: 0.42, turn: false },
+    // finally settle onto the sitar in his photograph (About section) and dissolve into it
+    { el: '.about-photo img', at: [0.806, 0.47], len: r => r.width * 1.25, ang: 63, from: 0.95, to: 0.3,
+      turn: false, merge: true }
   ];
   const ease = t => t * t * (3 - 2 * t);
   const clamp01 = v => Math.max(0, Math.min(1, v));
@@ -528,7 +538,7 @@ async function init() {
 
   function placement() {
     const vh = window.innerHeight;
-    let p = null, turns = 0, hop = 0;
+    let p = null, turns = 0, hop = 0, merge = 0;
     for (const st of STOPS) {
       if (st.desktopOnly && mobile()) continue;
       const el = document.querySelector(st.el);
@@ -538,25 +548,33 @@ async function init() {
       const q = { x: r.left + r.width * at[0], y: r.top + r.height * at[1], len: st.len(r),
                   ang: typeof st.ang === 'function' ? st.ang() : st.ang };
       if (!p) { p = q; continue; }
-      // never mid-flight before you scroll: start no lower than where this element sits at the top of the page
-      const fromPx = Math.min(st.from * vh, r.top + window.pageYOffset - 1);
-      const toPx = Math.min(st.to * vh, fromPx - 0.35 * vh);
-      const s = ease(clamp01((fromPx - r.top) / (fromPx - toPx)));
+      let s;
+      if (st.follow !== undefined) {
+        // travel along with the page so the sitar holds `follow` (fraction of the viewport) on screen
+        const c = st.follow * vh;
+        s = q.y === p.y ? 1 : clamp01((c - p.y) / (q.y - p.y));
+      } else {
+        // never mid-flight before you scroll: start no lower than where this element sits at the top of the page
+        const fromPx = Math.min(st.from * vh, r.top + window.pageYOffset - 1);
+        const toPx = Math.min(st.to * vh, fromPx - 0.35 * vh);
+        s = ease(clamp01((fromPx - r.top) / (fromPx - toPx)));
+        hop = Math.max(hop, Math.sin(Math.PI * s) * (st.merge ? 0.4 : 1));
+      }
       p = { x: lerp(p.x, q.x, s), y: lerp(p.y, q.y, s), len: lerp(p.len, q.len, s), ang: lerp(p.ang, q.ang, s) };
-      turns += s;
-      hop = Math.max(hop, Math.sin(Math.PI * s));
+      if (st.turn !== false) turns += s;
+      if (st.merge) merge = s;
     }
     if (p) p.y -= hop * vh * 0.06;          // a small lift mid-flight
-    return { p, turns, hop };
+    return { p, turns, hop, merge };
   }
 
   /* ---------- mount: one fixed, page-wide layer above the sections ---------- */
-  let raf = 0, shown = false, still = pose !== null || reduce, wasOff = false;
+  let raf = 0, shown = false, still = pose !== null || reduce, wasOff = false, lastFade = -1;
   let last = 0, frames = 0, slowMs = 0, tier = 0;
   const cvs = renderer.domElement;
   cvs.className = 'kk-sitar-layer';
   cvs.setAttribute('role', 'img');
-  cvs.setAttribute('aria-label', 'Pandit Kartick Kumar\'s sitar in 3D, resting on the chowk and moving through the page as you scroll');
+  cvs.setAttribute('aria-label', 'Pandit Kartick Kumar\'s sitar in 3D: it rests on the chowk, walks down the story street as you scroll, and settles into his photograph');
   document.documentElement.classList.add('kk-3d');
   wrap.classList.add('is-3d');
   document.body.appendChild(cvs);
@@ -587,7 +605,10 @@ async function init() {
   function render(t) {
     const s = t / 1000;
     cx += (mx - cx) * 0.05; cy += (my - cy) * 0.05;
-    const { p, turns } = placement();
+    const { p, turns, merge } = placement();
+    const fade = noFade ? 0 : clamp01((merge - 0.55) / 0.4);
+    if (fade !== lastFade) { cvs.style.opacity = shown ? String(1 - fade) : ''; lastFade = fade; }
+    if (fade >= 1) { if (!wasOff) { renderer.clear(); wasOff = true; } return; }
     if (!p) return;
     const vh = window.innerHeight, vw = window.innerWidth;
     const off = p.y < -p.len * 0.7 || p.y > vh + p.len * 0.7 || p.x < -p.len || p.x > vw + p.len;
@@ -606,8 +627,9 @@ async function init() {
       spin.rotation.y = pose;
       tilt.rotation.set(upright ? 0 : 0.08, 0, upright ? 0 : lean);
     } else if (!reduce) {
-      spin.rotation.y = 0.2 + Math.sin(s * 0.35) * 0.3 + cx * 0.45 + turns * Math.PI * 2;
-      tilt.rotation.set(0.08 + cy * 0.15, 0, lean + Math.sin(s * 0.5) * 0.02);
+      const calm = 1 - merge;                // settle face-on as it lands in the photograph
+      spin.rotation.y = (0.2 + Math.sin(s * 0.35) * 0.3 + cx * 0.45) * calm + turns * Math.PI * 2;
+      tilt.rotation.set((0.08 + cy * 0.15) * calm, 0, lean + Math.sin(s * 0.5) * 0.02 * calm);
       holder.position.y += Math.sin(s * 0.9) * 0.012 * k;
     } else {
       spin.rotation.y = 0.25;
@@ -615,7 +637,10 @@ async function init() {
     }
     moteMat.uniforms.uTime.value = s;
     renderer.render(scene, camera);
-    if (!shown) { shown = true; cvs.classList.add('on'); }
+    if (!shown) {
+      shown = true; cvs.classList.add('on');
+      setTimeout(() => { cvs.style.transition = 'none'; }, 1000);   // after the fade-in, opacity follows the scroll directly
+    }
   }
 
   // on-demand rendering (scroll / resize) when not animating continuously
