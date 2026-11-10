@@ -96,10 +96,10 @@ async function init() {
      main bridge 15.7 cm up, gourd ~26 cm deep, neck 10 x 7 cm, peg box 21 cm, overall ~128 cm,
      19 frets, 7 playing + 13 tarab strings, no upper gourd */
   const D = {
-    GX: 1.12, GY: 1.0, GZ: 1.7,       // gourd profile -> 41 x 39 x 31 cm (the artwork's fuller gourd)
+    GX: 1.12, GY: 1.0, GZ: 1.7,       // gourd profile -> 41 x 39 x 31 cm (his large round gourd)
     BRIDGE: 15.7, SCALE: 90,          // nut at 105.7
     NECK0: 30.0, NECK1: 127.1,        // neck from gourd joint to top of peg box
-    NW: 11.2, ND: 7.6                 // neck width / depth incl. fingerboard (sturdier, as in the artwork)
+    NW: 11.0, ND: 7.2                 // neck width / depth incl. fingerboard
   };
   D.NUT = D.BRIDGE + D.SCALE;
 
@@ -298,7 +298,7 @@ async function init() {
     ctx.strokeStyle = c.goldLine; ctx.beginPath(); ctx.moveTo(0, nutY + 38); ctx.lineTo(W, nutY + 38); ctx.stroke();
   }
 
-  const RED = '#a04a26';
+  const RED = '#8e3c1c';
   const sbTex = carved(1024, 1024, '#682a17', true, (x, c) => drawSoundboard(x, c, 1024));
   const gourdTex = carved(1024, 1024, RED, false, () => {});
   const fbTex = carved(128, 2048, '#5f2414', true, (x, c) => drawFingerboard(x, c, 128, 2048));
@@ -319,16 +319,17 @@ async function init() {
     loadTex('assets/sitar-board.jpg', true), loadTex('assets/sitar-board-mat.jpg'),
     loadTex('assets/sitar-neck.jpg', true), loadTex('assets/sitar-neck-mat.jpg')]);
   const photoMat = (map, pack) => map && pack ? new THREE.MeshPhysicalMaterial({
-    map, emissiveMap: map, emissive: 0x4a3a30, color: 0xf6e4dc, bumpMap: pack, bumpScale: 2.2, roughnessMap: pack, roughness: 1, metalnessMap: pack, metalness: 1,
+    map, color: 0xeee2da, bumpMap: pack, bumpScale: 2.2, roughnessMap: pack, roughness: 1, metalnessMap: pack, metalness: 1,
     clearcoat: 0.55, clearcoatRoughness: 0.16, envMapIntensity: 0.7 }) : null;   // the photo is already lit: tone it down
   const M = {
     board: photoMat(boardMap, boardPack) || lacquer(sbTex),
     gourd: lacquer(gourdTex, { side: THREE.DoubleSide }),
     finger: photoMat(neckMap, neckPack) || lacquer(fbTex),
     neck: lacquer(neckTex, { side: THREE.DoubleSide }),
-    gold: new THREE.MeshStandardMaterial({ color: 0xf0c870, metalness: 1, roughness: 0.32, envMapIntensity: 1.5 }),
-    peg: new THREE.MeshPhysicalMaterial({ color: 0xa3281a, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.1 }),
-    fret: new THREE.MeshStandardMaterial({ color: 0xeac47a, metalness: 1, roughness: 0.22, envMapIntensity: 1.6 }),
+    gold: new THREE.MeshStandardMaterial({ color: 0xe6c886, metalness: 1, roughness: 0.32, envMapIntensity: 1.5 }),
+    peg: new THREE.MeshPhysicalMaterial({ color: 0x5a2312, roughness: 0.35, clearcoat: 0.9, clearcoatRoughness: 0.12, envMapIntensity: 1.0 }),
+    pegStem: new THREE.MeshPhysicalMaterial({ color: 0xa8683c, roughness: 0.4, clearcoat: 0.7, clearcoatRoughness: 0.2, envMapIntensity: 0.9 }),
+    fret: new THREE.MeshStandardMaterial({ color: 0xece8de, metalness: 1, roughness: 0.18, envMapIntensity: 1.8 }),
     bone: new THREE.MeshPhysicalMaterial({ color: 0xf2ead8, roughness: 0.42, clearcoat: 0.4, clearcoatRoughness: 0.35, envMapIntensity: 0.8 }),
     steel: new THREE.MeshStandardMaterial({ color: 0xebe5d8, metalness: 1, roughness: 0.2, envMapIntensity: 1.4 }),
     bronze: new THREE.MeshStandardMaterial({ color: 0xcf8f4c, metalness: 1, roughness: 0.25, envMapIntensity: 1.4 })
@@ -382,18 +383,8 @@ async function init() {
     const back = add(new THREE.CylinderGeometry(HW, HW, len, 32, 1, true, Math.PI / 2, Math.PI), M.neck, [0, cy, 0]);
     back.scale.z = BACK / HW;
     add(new THREE.BoxGeometry(NW, len, 0.6), [M.gold, M.gold, M.gold, M.gold, M.finger, M.finger], [0, cy, 0.3]);
-    add(new THREE.BoxGeometry(NW + 0.2, 1.2, ND + 0.2), M.gold, [0, NECK1 + 0.6, 0.6 - ND / 2]); // gold cap on the peg box
-    // round scroll head, as on the artwork's sitar
-    const HR = 6.2, HY = NECK1 + 1.2 + HR * 0.82, HZ = 0.6 - ND / 2;
-    add(new THREE.CylinderGeometry(HR, HR, ND, 48), M.neck, [0, HY, HZ], [Math.PI / 2, 0, 0]);
-    add(new THREE.CircleGeometry(HR - 0.9, 48), M.finger, [0, HY, HZ + ND / 2 + 0.02]);
-    add(new THREE.TorusGeometry(HR - 0.45, 0.5, 12, 64), M.gold, [0, HY, HZ + ND / 2 + 0.05]);
-    add(new THREE.TorusGeometry(HR * 0.42, 0.32, 10, 48), M.gold, [0, HY, HZ + ND / 2 + 0.05]);
-    add(new THREE.SphereGeometry(1.1, 20, 14), M.gold, [0, HY, HZ + ND / 2 + 0.3]);
-    for (let i = 0; i < 8; i++) {
-      const a = i / 8 * Math.PI * 2;
-      add(new THREE.SphereGeometry(0.45, 12, 10), M.gold, [Math.cos(a) * HR * 0.7, HY + Math.sin(a) * HR * 0.7, HZ + ND / 2 + 0.15]);
-    }
+    add(new THREE.BoxGeometry(NW + 0.2, 1.2, ND + 0.2), M.gold, [0, NECK1 + 0.6, 0.6 - ND / 2]); // gold cap on the square peg box
+    add(new THREE.BoxGeometry(NW + 0.5, 0.5, ND + 0.5), M.gold, [0, NECK1 + 1.45, 0.6 - ND / 2]);
   }
 
   /* nut (meru), twin bone bridges and the gold tailpiece anchor, where they sit on his sitar */
@@ -411,27 +402,43 @@ async function init() {
     add(new THREE.TubeGeometry(curve, 24, 0.19, 8, false), M.fret);
   });
 
-  /* pegs (khunti): glossy red balls on short turned stems, as on the artwork's sitar */
-  const pegGeo = new THREE.LatheGeometry([
-    [0, 0], [0.42, 0], [0.42, 2.6], [0.7, 2.8], [0.7, 3.2], [0.5, 3.45], [0.55, 3.75],
-    [1.15, 4.05], [1.62, 4.75], [1.78, 5.6], [1.62, 6.45], [1.15, 7.12], [0.55, 7.45], [0, 7.55]
-  ].map(p => new THREE.Vector2(p[0], p[1])), 40);
+  /* pegs (khunti) as on his sitar: dark-brown fluted heads on lighter turned stems */
+  const lathe = (pts, seg) => new THREE.LatheGeometry(pts.map(q => new THREE.Vector2(q[0], q[1])), seg);
+  const pegStemGeo = lathe([[0, 0], [0.42, 0], [0.42, 2.9], [0.64, 3.1], [0.64, 3.5], [0.46, 3.75],
+    [0.56, 4.05], [0.8, 4.3], [0, 4.32]], 24);
+  const pegHeadGeo = lathe([[0, 4.2], [0.8, 4.3], [1.38, 4.75], [1.7, 5.55], [1.64, 6.45], [1.22, 7.15],
+    [0.55, 7.55], [0.28, 7.72], [0.34, 7.95], [0, 8.05]], 48);
+  {
+    // deep flutes, like the carved melon heads on his pegs
+    const q = pegHeadGeo.attributes.position;
+    for (let i = 0; i < q.count; i++) {
+      const y = q.getY(i);
+      if (y > 4.3 && y < 7.6) {
+        const x = q.getX(i), z = q.getZ(i), f = 1 + 0.13 * Math.cos(10 * Math.atan2(x, z)) * Math.sin(Math.PI * (y - 4.3) / 3.3);
+        q.setX(i, x * f); q.setZ(i, z * f);
+      }
+    }
+    pegHeadGeo.computeVertexNormals();
+  }
   const MIDZ = 0.6 - ND / 2;                     // halfway through the neck's depth
   const peg = (side, y, s, z, x) => {
-    const m = add(pegGeo, M.peg,
-      side === 0 ? [x || 0, y, 0.55] : [side * (HW - 0.25), y, z === undefined ? MIDZ : z],
-      side === 0 ? [Math.PI / 2, 0, 0] : [0, 0, -side * Math.PI / 2]);
+    const m = new THREE.Group();
+    m.add(new THREE.Mesh(pegStemGeo, M.pegStem), new THREE.Mesh(pegHeadGeo, M.peg));
+    const at = side === 0 ? [x || 0, y, 0.55] : [side * (HW - 0.25), y, z === undefined ? MIDZ : z];
+    const rot = side === 0 ? [Math.PI / 2, 0, 0] : [0, 0, -side * Math.PI / 2];
+    m.position.set(at[0], at[1], at[2]); m.rotation.set(rot[0], rot[1], rot[2]);
     m.scale.setScalar(s || 1);
+    inst.add(m);
     return m;
   };
   // pegs as on his sitar: all side pegs on one side, two through the face of the peg box
   const SIDE = -1, FACE_X = 1.6;
   const headPegs = [[0, 123.4], [0, 114.1], [SIDE, 124.3], [SIDE, 117.0], [SIDE, 110.1]];
-  headPegs.forEach(p => peg(p[0], p[1], p[0] ? 1.4 : 1.1, undefined, FACE_X));
+  headPegs.forEach(p => peg(p[0], p[1], p[0] ? 1.45 : 0.95, undefined, FACE_X));
   const sidePegs = [100.6, 92.4];                       // two chikari pegs below the nut
-  sidePegs.forEach(y => peg(SIDE, y, 1.3));
+  sidePegs.forEach(y => peg(SIDE, y, 1.35));
   const tarabY = [88.0, 84.3, 80.8, 77.2, 73.4, 67.4, 62.2, 59.7, 57.1, 54.4, 50.9, 47.8, 45.6];
-  tarabY.forEach((y, k) => peg(SIDE, y, 0.78 + (y - 45) / 43 * 0.2, MIDZ + (k % 2 ? 0.8 : -0.8)));
+  tarabY.forEach((y, k) => peg(SIDE, y, 0.7 + (y - 45) / 43 * 0.22, MIDZ + (k % 2 ? 0.8 : -0.8)));
 
   /* strings: 7 playing strings + 13 tarab */
   const zAt = 2.75;
