@@ -160,8 +160,9 @@
   var hbg=document.querySelector('.hero-bg');
   function heroParallax(){
     if(reduce||!hbg) return;
-    var y=window.pageYOffset;
-    if(y<window.innerHeight) hbg.style.transform='translateY('+(y*0.25)+'px) scale(1.05)';
+    // measured from the hero's own top, since the Chowk scene now sits above it
+    var y=-hbg.parentNode.getBoundingClientRect().top;
+    if(y>-window.innerHeight && y<window.innerHeight) hbg.style.transform='translateY('+(Math.max(0,y)*0.25)+'px) scale(1.05)';
   }
 
   window.addEventListener('scroll', onScroll, {passive:true});

@@ -538,7 +538,7 @@ async function init() {
   function render(t) {
     const s = t / 1000;
     cx += (mx - cx) * 0.05; cy += (my - cy) * 0.05;
-    const scrollK = Math.min(window.pageYOffset / window.innerHeight, 1);
+    const scrollK = Math.max(0, Math.min(-hero.getBoundingClientRect().top / window.innerHeight, 1));
     if (pose !== null) {
       spin.rotation.y = pose;
       if (upright) tilt.rotation.set(0, 0, 0);

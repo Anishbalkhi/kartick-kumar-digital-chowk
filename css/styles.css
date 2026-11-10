@@ -85,6 +85,25 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   .menu-btn{display:flex}
 }
 
+/* ======================= THE CHOWK (opening scene) ======================= */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* the artwork carries its own lettering, so it is shown whole: full width, never cropped */
+.chowk{position:relative;background:#120d14;overflow:hidden}
+.chowk img{display:block;width:100%;height:auto;max-height:100vh;max-height:100svh;object-fit:contain;margin:0 auto}
+.chowk::after{content:"";position:absolute;left:0;right:0;bottom:0;height:16%;pointer-events:none;
+  background:linear-gradient(rgba(5,5,6,0),#050506)}
+.chowk-cue{position:absolute;left:50%;bottom:clamp(10px,2.4vw,28px);transform:translateX(-50%);z-index:2;
+  width:44px;height:44px;display:grid;place-items:center;border-radius:50%;color:var(--gold-hi);
+  background:rgba(10,7,4,.55);border:1px solid rgba(242,196,109,.45);backdrop-filter:blur(4px)}
+.chowk-cue svg{width:22px;height:22px;animation:jrBob 2.4s ease-in-out infinite}
+.chowk-cue:hover{border-color:var(--gold-2);background:rgba(30,20,10,.7)}
+.chowk-cue:focus-visible{outline:2px solid var(--gold-2);outline-offset:3px}
+/* phones: crop to the central monument so its lettering stays readable */
+@media(max-width:860px){
+  .chowk{padding-top:64px}
+  .chowk img{height:min(54svh,500px);max-height:none;object-fit:cover;object-position:50% 58%}
+}
+
 /* ======================= HERO (cinematic, 3D) ======================= */
 .hero{position:relative;height:100vh;min-height:600px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;text-align:center;overflow:hidden}
