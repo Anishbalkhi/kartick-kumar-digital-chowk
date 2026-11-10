@@ -512,8 +512,9 @@ async function init() {
   const mobile = () => window.matchMedia('(max-width: 860px)').matches;
   const STOPS = [
     // phones crop the image to its middle, so the sitar sits a little smaller and further left there
-    { el: '.chowk-stage', at: () => mobile() ? [0.555, 0.27] : [0.59, 0.245],
-      len: r => r.width * (mobile() ? 0.31 : 0.4), ang: 30 },
+    // placed as in the original artwork: gourd resting on the rim at ~(45%, 34%), head ending near (73%, 7%)
+    { el: '.chowk-stage', at: () => mobile() ? [0.555, 0.245] : [0.573, 0.231],
+      len: r => r.width * (mobile() ? 0.32 : 0.36), ang: 29 },
     { el: '.hero', at: () => mobile() ? [0.5, 0.5] : [0.27, 0.5],
       len: r => mobile() ? Math.min(r.width * 0.95, r.height * 0.62) : Math.min(r.width * 0.42, r.height * 0.7),
       ang: 37, from: 0.85, to: 0.1 },
