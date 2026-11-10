@@ -264,7 +264,8 @@ section{position:relative}
    and spacing all scale with the screen width over the photograph. */
 @media(min-width:861px){
   #journey.jr{padding:0 0 clamp(30px,4vw,70px);background:#0b0806}
-  .jr-bg{background-image:url(../assets/journey-bg.jpg)}
+  /* the picture scrolls with the cards, so each card keeps its place on it */
+  .jr-bg{background-image:url(../assets/journey-bg.jpg);position:absolute;inset:0;height:auto;margin:0}
   .jr-bg::after{background:
     radial-gradient(130% 95% at 50% 52%,transparent 50%,rgba(8,5,3,.55) 100%),
     linear-gradient(180deg,rgba(8,5,3,.45),rgba(8,5,3,.12) 16%,rgba(8,5,3,.12) 84%,rgba(8,5,3,.5))}
